@@ -1,6 +1,6 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
 
-import "@workspace/ui/globals.css";
+import "../globals.css";
 import { Providers } from "@/components/providers/providers";
 import { Appbar } from "@/components/appbar";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,15 +8,15 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
-} from "@workspace/ui/components/card";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Checkbox } from "@workspace/ui/components/checkbox";
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Loader2, Key } from "lucide-react";
 import { authClient } from "@workspace/auth/client";
 import Link from "next/link";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -25,7 +25,7 @@ export default function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
 
   return (
-<Card className="w-full max-w-md mx-auto shadow-lg rounded-2xl border">
+<Card className="w-full min-w-md mx-auto shadow-lg rounded-2xl border">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
         <CardDescription className="text-xs md:text-sm">

@@ -1,9 +1,10 @@
-"use client";
+"use client"
 
-import { Button } from "@workspace/ui/components/button";
-import Link from "next/link";
-import { LogoutButton } from "./buttons/logout";
-import { authClient } from "@workspace/auth/client";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { usePathname } from "next/navigation"
+import { authClient } from "@workspace/auth/client"
+import { LogoutButton } from "./buttons/logout"
 
 export function Appbar() {
   const { data, isPending } = authClient.useSession();
@@ -26,12 +27,12 @@ export function Appbar() {
       {!data?.user ? (
         <div className="space-x-2 sm:space-x-4">
           <Link href="/signup">
-            <Button size="sm" variant="defaultpointer">
+            <Button size="sm" variant="default">
               Sign Up
             </Button>
           </Link>
           <Link href="/signin">
-            <Button size="sm" variant="secondarypointer">
+            <Button size="sm" variant="default">
               Sign In
             </Button>
           </Link>

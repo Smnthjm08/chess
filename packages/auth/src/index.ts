@@ -4,12 +4,12 @@ import { prisma } from "@workspace/db";
 import { nextCookies } from "better-auth/next-js";
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET!,
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "postgresql", ...etc
   }),
   emailAndPassword: {
     enabled: true,
-    // autoSignIn: false //defaults to true
     callbackURL: "/dashboard"
   },
   socialProviders: {
@@ -22,5 +22,5 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     },
   },
-  plugins: [nextCookies()], // make sure this is the last plugin in the array
+  plugins: [nextCookies()],
 });
