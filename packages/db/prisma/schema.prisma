@@ -73,3 +73,18 @@ model Verification {
 
   @@map("verification")
 }
+
+enum roomType {
+  single
+  multiple
+}
+
+model Room {
+  id       String   @id
+  slug     String   @unique
+  name     String
+  roomType roomType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("room")
+}

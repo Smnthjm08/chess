@@ -10,7 +10,7 @@
     "db:seed": "turbo db:seed",
     "dev": "dotenv -- turbo dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "generate": "turbo run generate",
+    "db:generate": "turbo run generate",
     "lint": "turbo lint",
     "studio": "turbo run studio"
   },

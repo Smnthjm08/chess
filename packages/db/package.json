@@ -4,15 +4,13 @@
   "main": "index.js",
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:dev": "npx prisma migrate dev",
     "db:push": "prisma db push",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx src/seed.ts",
     "dev": "tsup src/* --watch",
     "format": "prisma format",
-    "generate": "prisma generate",
     "lint": "eslint . --max-warnings 0",
-    "predev": "npm run generate",
     "studio": "prisma studio"
   },
   "exports": {
