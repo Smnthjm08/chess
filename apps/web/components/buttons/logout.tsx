@@ -17,6 +17,7 @@ export function LogoutButton() {
   return (
     <Button
       variant={"destructive"}
+      size={"sm"}
       className="hover:cursor-pointer"
       onClick={handleLogout}
     >

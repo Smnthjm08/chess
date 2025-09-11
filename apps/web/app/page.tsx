@@ -6,7 +6,6 @@ export default function TestPage() {
         <h1 className="mb-2 font-heading text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">
           resonate
         </h1>
-        
       </div>
     </div>
   );

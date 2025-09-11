@@ -8,9 +8,13 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "postgresql", ...etc
   }),
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // Default: 7 days (in seconds)
+    updateAge: 60 * 60 * 24 // Default: 1 day (in seconds)
+  },
   emailAndPassword: {
     enabled: true,
-    callbackURL: "/dashboard"
+    callbackURL: "/explore"
   },
   socialProviders: {
     google: {

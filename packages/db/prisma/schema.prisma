@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -15,15 +9,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String   @id
   name          String
   email         String
   emailVerified Boolean
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+
+  sessions Session[]
+  accounts Account[]
+  rooms    Room[]
 
   @@unique([email])
   @@map("user")
@@ -48,8 +44,6 @@ model Account {
   id                    String    @id
   accountId             String
   providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -59,6 +53,9 @@ model Account {
   password              String?
   createdAt             DateTime
   updatedAt             DateTime
+
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
@@ -74,17 +71,24 @@ model Verification {
   @@map("verification")
 }
 
-enum roomType {
-  single
-  multiple
-}
+// enum audioSource {
+//   single
+//   multiple
+// }
 
 model Room {
-  id       String   @id
-  slug     String   @unique
-  name     String
-  roomType roomType
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  isPublic  Boolean  @default(true)
+  pin       String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  hostId String
+  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([slug, id])
   @@map("room")
 }

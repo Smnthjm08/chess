@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Github, Loader2 } from "lucide-react";
 import { authClient } from "@workspace/auth/client";
 import { toast } from "sonner";
@@ -27,6 +27,15 @@ export default function SignUp() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const session = authClient.useSession();
+  console.log("nhc", session);
+
+  useEffect(() => {
+    if (session?.data) {
+      router.push("/explore");
+    }
+  }, [session]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,7 +131,7 @@ export default function SignUp() {
                 password,
                 name: `${firstName} ${lastName}`,
                 image: image ? await convertImageToBase64(image) : "",
-                callbackURL: "/dashboard",
+                callbackURL: "/explore",
                 fetchOptions: {
                   onResponse: () => {
                     setLoading(false);
@@ -134,7 +143,7 @@ export default function SignUp() {
                     toast.error(ctx.error.message);
                   },
                   onSuccess: async () => {
-                    router.push("/dashboard");
+                    router.push("/explore");
                   },
                 },
               });
@@ -168,7 +177,7 @@ export default function SignUp() {
                   await authClient.signIn.social(
                     {
                       provider: "google",
-                      callbackURL: "/dashboard",
+                      callbackURL: "/explore",
                     },
                     {
                       onRequest: (ctx) => {
@@ -214,7 +223,7 @@ export default function SignUp() {
                   await authClient.signIn.social(
                     {
                       provider: "github",
-                      callbackURL: "/dashboard",
+                      callbackURL: "/explore",
                     },
                     {
                       onRequest: (ctx) => {

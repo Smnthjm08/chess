@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/common",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*"
+  },
+  "exports":{
+    "./room": "./src/schemas/room.schema.ts"
+  }
+}
