@@ -18,14 +18,14 @@ import React, { useState, useEffect } from "react";
 import { getAllPublicRooms } from "@/actions/room";
 import { toast } from "sonner";
 
-type Room = {
+export type Room = {
   id: string;
   slug: string;
   name: string;
   isPublic: boolean;
-  pin: string;
-  createdAt: string;
-  updatedAt: string;
+  pin: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   // currentSong: string;
 };
 
@@ -40,6 +40,7 @@ const Page = () => {
       const result = await getAllPublicRooms();
 
       if (result.status === "success") {
+        console.log("=========", rooms);
         // @ts-ignore
         setRooms(result?.data ?? []);
       } else {
@@ -163,7 +164,7 @@ const Page = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{room.createdAt}</span>
+                      <span>{new Date(room.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
                 </CardContent>

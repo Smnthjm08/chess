@@ -35,7 +35,7 @@ export default function SignUp() {
     if (session?.data) {
       router.push("/explore");
     }
-  }, [session]);
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,7 +109,7 @@ export default function SignUp() {
               placeholder="Password"
             />
           </div>
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <Label htmlFor="password">Confirm Password</Label>
             <Input
               id="password_confirmation"
@@ -119,7 +119,7 @@ export default function SignUp() {
               autoComplete="new-password"
               placeholder="Confirm Password"
             />
-          </div>
+          </div> */}
 
           <Button
             type="submit"

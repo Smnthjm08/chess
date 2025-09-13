@@ -36,7 +36,7 @@ export default function SignIn() {
   }, [session]);
 
   return (
-<Card className="w-full min-w-md mx-auto shadow-lg rounded-2xl border">
+    <Card className="w-full min-w-md mx-auto shadow-lg rounded-2xl border">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
         <CardDescription className="text-xs md:text-sm">
@@ -104,7 +104,7 @@ export default function SignIn() {
                   onResponse: (ctx) => {
                     setLoading(false);
                   },
-                },
+                }
               );
             }}
           >
@@ -118,7 +118,7 @@ export default function SignIn() {
           <div
             className={cn(
               "w-full gap-2 flex items-center",
-              "justify-between flex-col",
+              "justify-between flex-col"
             )}
           >
             <Button
@@ -138,7 +138,7 @@ export default function SignIn() {
                     onResponse: (ctx) => {
                       setLoading(false);
                     },
-                  },
+                  }
                 );
               }}
             >
@@ -184,7 +184,7 @@ export default function SignIn() {
                     onResponse: (ctx) => {
                       setLoading(false);
                     },
-                  },
+                  }
                 );
               }}
             >
