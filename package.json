@@ -1,35 +1,24 @@
 {
-  "name": "resonate",
-  "version": "0.0.1",
+  "name": "with-tailwind",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "db:migrate:deploy": "turbo db:migrate:deploy",
-    "db:migrate:dev": "turbo db:migrate:dev",
-    "db:push": "turbo db:push",
-    "db:seed": "turbo db:seed",
-    "dev": "dotenv -- turbo dev",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "turbo run generate",
-    "lint": "turbo lint",
-    "studio": "turbo run studio"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "@types/node": "^20.19.9",
-    "@workspace/eslint-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*",
-    "dotenv-cli": "^10.0.0",
-    "prettier": "^3.6.2",
-    "tsx": "^4.20.5",
-    "turbo": "^2.5.5",
-    "typescript": "5.7.3"
+    "prettier": "^3.6.0",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.5.6"
   },
-  "packageManager": "pnpm@10.15.1",
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
-  "dependencies": {
-    "better-auth": "^1.3.8",
-    "zod": "^4.1.5"
-  }
+  "packageManager": "bun@1.2.20",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
