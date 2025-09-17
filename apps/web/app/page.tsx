@@ -9,7 +9,6 @@ import {
   Lock,
   LockKeyholeOpen,
   Music,
-  Plus,
   Search,
   Users,
   RefreshCw,
@@ -18,7 +17,7 @@ import React, { useState, useEffect } from "react";
 import { getAllPublicRooms } from "@/actions/room";
 import { toast } from "sonner";
 
-export type Room = {
+export interface Room{
   id: string;
   slug: string;
   name: string;
@@ -41,7 +40,6 @@ const Page = () => {
 
       if (result.status === "success") {
         console.log("=========", rooms);
-        // @ts-expect-error
         setRooms(result?.data ?? []);
       } else {
         toast.error(result.message);

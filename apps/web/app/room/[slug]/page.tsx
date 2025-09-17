@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { authClient } from "@repo/auth/client";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Share, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UsersInRoomType } from "@/components/providers/room-providers";
@@ -21,9 +21,14 @@ const WS_URL = process.env.WS_URL || "ws://localhost:8080";
 const Page = () => {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const { room, setRoom, usersInRoom, setUsersInRoom } = useRoom();
+  const [messages, setMessages] = useState<string[]>([]);
   const { data: session } = authClient.useSession();
+
+  console.log("message", messages);
+
+  console.log("session", session);
 
   console.log("room", room);
   console.log("usersInRoom", usersInRoom);
@@ -51,43 +56,39 @@ const Page = () => {
     } else {
       router.push("/explore");
     }
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
-    if (!room || !session?.user) return;
+    if (!room || !session?.user || !room?.id) return;
 
-    const ws = new WebSocket(WS_URL);
+    const url = `${WS_URL}?roomId=${room?.id}`;
+    const ws = new WebSocket(url);
+
+    console.log("ws", ws);
 
     ws.onopen = () => {
       console.log("✅ Connected to WebSocket");
-
-      ws.send(
-        JSON.stringify({
-          type: "join_room",
-          roomId: room.id,
-          userId: session.user.id,
-          userName: session.user.name,
-          message: `${session.user.name} joined the room.`,
-        })
-      );
     };
 
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
+    ws.onmessage = (message) => {
+      console.log("message.data", JSON.parse(message.data));
+      const parsedMessage = JSON.parse(message.data);
 
-      switch (msg.type) {
-        case "room_users":
-          setUsersInRoom(msg.users);
+      switch (parsedMessage.event) {
+        case "JOIN_ROOM":
           break;
-        case "system":
-          console.log("ℹ️", msg.message);
-          break;
-        case "message":
-          console.log("💬", msg.userId, msg.message);
+        case "USER_UPDATE":
+          setUsersInRoom(parsedMessage.payload.users);
           break;
         default:
-          console.log("Unknown message:", msg);
+          break;
       }
+
+      setMessages((prev) => [...prev, message.data]);
+      console.log(",ess", typeof message.data);
+      //       ws.send(`{
+      //     "message": "im good"
+      // }`);
     };
 
     ws.onclose = () => {
@@ -146,8 +147,19 @@ const Page = () => {
       <ResizableHandle disabled={true} />
 
       <ResizablePanel defaultSize={75}>
-        <div className="flex h-full items-center justify-center p-6">
-          <span className="font-semibold">Content</span>
+        <div className="flex flex-col h-full p-6 gap-2">
+          <span className="font-semibold">Messages</span>
+          <div className="flex-1 overflow-y-auto border rounded p-2">
+            {messages.length > 0 ? (
+              messages.map((msg: string, idx: number) => (
+                <div key={idx} className="text-sm p-1 border-b">
+                  {typeof msg === "string" ? msg : JSON.stringify(msg)}
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-500">No messages yet</span>
+            )}
+          </div>
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>

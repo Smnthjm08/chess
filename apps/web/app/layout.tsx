@@ -1,6 +1,6 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
 
-import "../globals.css";
+import "./globals.css";
 import { Appbar } from "@/components/appbar";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";

@@ -11,6 +11,7 @@
     "@repo/typescript-config": "workspace:*"
   },
   "exports": {
-    "./room": "./src/schemas/room.schema.ts"
+    "./room": "./src/schemas/room.schema.ts",
+    "./types/ws": "./src/types/index.ts"
   }
 }

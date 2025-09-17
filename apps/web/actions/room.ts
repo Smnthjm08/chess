@@ -178,7 +178,7 @@ export async function getAllPublicRooms() {
     return {
       status: "success",
       message: "Public rooms fetched successfully!",
-      data: serializedRooms,
+      data: serializedRooms ?? "No room",
     };
   } catch (error: any) {
     console.error("Get Public Rooms Error:", error);

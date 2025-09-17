@@ -7,7 +7,12 @@
     "BE_PORT",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
-    "WS_URL"
+    "WS_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "DATABASE_URL"
   ],
   "tasks": {
     "build": {

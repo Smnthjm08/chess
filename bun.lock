@@ -86,6 +86,20 @@
         "typescript": "^5",
       },
     },
+    "apps/ws-backend": {
+      "name": "ws-backend",
+      "devDependencies": {
+        "@repo/auth": "workspace:*",
+        "@repo/db": "workspace:*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/shared": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/auth": {
       "name": "@repo/auth",
       "devDependencies": {
@@ -1362,6 +1376,8 @@
     "word-wrap": ["word-wrap@1.2.5", "", {}, "sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA=="],
 
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
+
+    "ws-backend": ["ws-backend@workspace:apps/ws-backend"],
 
     "yallist": ["yallist@5.0.0", "", {}, "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw=="],
 
