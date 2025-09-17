@@ -12,31 +12,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect, useState } from "react";
-import { Loader2, Key } from "lucide-react";
-import { authClient } from "@workspace/auth/client";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { authClient } from "@repo/auth/client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const router = useRouter();
-
-  const session = authClient.useSession();
-  console.log("nhc", session);
-
-  useEffect(() => {
-    if (session?.data) {
-      router.push("/explore");
-    }
-  }, [session]);
 
   return (
-<Card className="w-full min-w-md mx-auto shadow-lg rounded-2xl border">
+    <Card className="w-full min-w-md mx-auto shadow-lg rounded-2xl border">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
         <CardDescription className="text-xs md:text-sm">
@@ -104,7 +93,7 @@ export default function SignIn() {
                   onResponse: (ctx) => {
                     setLoading(false);
                   },
-                },
+                }
               );
             }}
           >
@@ -118,7 +107,7 @@ export default function SignIn() {
           <div
             className={cn(
               "w-full gap-2 flex items-center",
-              "justify-between flex-col",
+              "justify-between flex-col"
             )}
           >
             <Button
@@ -138,7 +127,7 @@ export default function SignIn() {
                     onResponse: (ctx) => {
                       setLoading(false);
                     },
-                  },
+                  }
                 );
               }}
             >
@@ -184,7 +173,7 @@ export default function SignIn() {
                     onResponse: (ctx) => {
                       setLoading(false);
                     },
-                  },
+                  }
                 );
               }}
             >

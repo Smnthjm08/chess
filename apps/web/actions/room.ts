@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@workspace/db";
-import { roomSchema, roomUpdateSchema } from "@workspace/common/room";
+import { prisma } from "@repo/db";
+import { roomSchema, roomUpdateSchema } from "@repo/shared/room";
 import bcrypt from "bcryptjs";
 import { getSessionUser } from "./utils";
 import { roomTypes } from "@/components/create-room-dialog";
@@ -178,7 +178,7 @@ export async function getAllPublicRooms() {
     return {
       status: "success",
       message: "Public rooms fetched successfully!",
-      data: serializedRooms,
+      data: serializedRooms ?? "No room",
     };
   } catch (error: any) {
     console.error("Get Public Rooms Error:", error);

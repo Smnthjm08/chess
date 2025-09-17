@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Github, Loader2 } from "lucide-react";
-import { authClient } from "@workspace/auth/client";
+import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -22,20 +22,10 @@ export default function SignUp() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-
-  const session = authClient.useSession();
-  console.log("nhc", session);
-
-  useEffect(() => {
-    if (session?.data) {
-      router.push("/explore");
-    }
-  }, [session]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,17 +97,6 @@ export default function SignUp() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
               placeholder="Password"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Confirm Password</Label>
-            <Input
-              id="password_confirmation"
-              type="password"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Confirm Password"
             />
           </div>
 

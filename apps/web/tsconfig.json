@@ -1,23 +1,30 @@
 {
-  "extends": "@workspace/typescript-config/nextjs.json",
+  "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
-    },
+        "@/components/*": ["components/*"],
+        "@/lib/*": ["lib/*"],
+        "@/utils/*": ["utils/*"],
+        "@/actions/*": ["actions/*"],
+        "@/hooks/*": ["hooks/*"]
+        // Add more aliases as needed
+        },
     "plugins": [
       {
         "name": "next"
       }
-    ]
+    ],
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "next-env.d.ts",
-    "next.config.ts",
     "**/*.ts",
     "**/*.tsx",
+    "next-env.d.ts",
+    "next.config.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -1,9 +1,9 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
 
-import "../globals.css";
-import { Providers } from "@/components/providers/providers";
+import "./globals.css";
 import { Appbar } from "@/components/appbar";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
 
 const font = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -17,14 +17,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning suppressContentEditableWarning>
-      <body className={`${font.className} font-sans antialiased h-screen flex flex-col`}>
-        <Providers>
+      <body
+        className={`${font.className} font-sans antialiased h-screen flex flex-col`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           <Appbar />
-          <main className="flex-1 overflow-auto">
-            {children}
-          </main>
+          <main className="flex-1 overflow-auto">{children}</main>
           <Toaster />
-        </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

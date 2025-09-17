@@ -1,17 +1,16 @@
 {
-  "name": "@workspace/auth",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "name": "@repo/auth",
+  "module": "src/index.ts",
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "@workspace/db": "workspace:*"
-  },
+    "@types/bun": "latest",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@repo/db": "workspace:*"
+  }, 
   "exports": {
     "./server": "./src/index.ts",
     "./client": "./src/client.ts"

@@ -1,12 +1,12 @@
 {
-  "extends": "@workspace/typescript-config/base.json",
+  "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
-    "moduleResolution": "node16",          // or "nodenext"
-    "baseUrl": ".",                        // important for paths
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "src",
     "outDir": "dist",
-    "paths": {
-      "@workspace/db/*": ["../../packages/db/src/*"]
-    }
+    "module": "esnext",
+    "moduleResolution": "bundler"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

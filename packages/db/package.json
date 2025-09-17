@@ -1,31 +1,25 @@
 {
-  "name": "@workspace/db",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@repo/db",
+  "module": "src/index.ts",
+  "type": "module",
   "scripts": {
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:dev": "npx prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:reset": "prisma migrate reset",
-    "db:seed": "tsx src/seed.ts",
-    "dev": "tsup src/* --watch",
-    "format": "prisma format",
-    "lint": "eslint . --max-warnings 0",
-    "studio": "prisma studio"
+    "db:migrate": "npx prisma migrate dev",
+    "db:reset": "npx prisma migrate reset",
+    "generate": "npx prisma generate"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "prisma": "^6.16.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "prisma": "^6.15.0",
-    "tsup": "^8.0.2"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.15.0",
-    "dotenv": "^17.2.2"
   }
 }

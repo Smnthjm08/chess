@@ -1,0 +1,19 @@
+{
+  "name": "ws-backend",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch --smol run ./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/auth": "workspace:*",
+    "@repo/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

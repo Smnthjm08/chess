@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@workspace/auth/client";
+import { authClient } from "@repo/auth/client";
 import { LogoutButton } from "./buttons/logout";
 
 export function Appbar() {

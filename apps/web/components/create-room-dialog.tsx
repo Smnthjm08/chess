@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "./ui/switch";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Loader2 } from "lucide-react";
 
 // import OTP input

@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@workspace/auth/client";
+import { authClient } from "@repo/auth/client";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
