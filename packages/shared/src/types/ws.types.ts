@@ -29,7 +29,6 @@ const ChatMessageSchema = z.object({
     userId: z.string(),
     userName: z.string(),
     message: z.string(),
-    timestamp: z.string(),
   }),
 });
 
