@@ -11,7 +11,7 @@ export async function createRoomAction(data: roomTypes) {
     const userId = await getSessionUser();
     if (!userId) {
       return { 
-        status: "failed", 
+        status: "failed",
         message: "You must be logged in to create a room" 
       };
     }
@@ -169,8 +169,8 @@ export async function getAllPublicRooms() {
       name: room.name,
       isPublic: room.isPublic,
       pin: room.pin,
-      createdAt: room.createdAt.toISOString(),
-      updatedAt: room.updatedAt.toISOString(),
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt,
       hostId: room.hostId,
       // participants: room._count?.participants ?? 0,
     }));

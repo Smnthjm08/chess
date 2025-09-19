@@ -16,17 +16,9 @@ import {
 import React, { useState, useEffect } from "react";
 import { getAllPublicRooms } from "@/actions/room";
 import { toast } from "sonner";
+import { Room } from "types/room.types";
 
-export interface Room{
-  id: string;
-  slug: string;
-  name: string;
-  isPublic: boolean;
-  pin: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  // currentSong: string;
-};
+
 
 const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,10 +29,11 @@ const Page = () => {
     try {
       setIsLoading(true);
       const result = await getAllPublicRooms();
+      const data = result?.data;
+      console.log("Rooms", result)
 
       if (result.status === "success") {
-        console.log("=========", rooms);
-        setRooms(result?.data ?? []);
+        setRooms(data);
       } else {
         toast.error(result.message);
       }
@@ -56,9 +49,11 @@ const Page = () => {
     fetchRooms();
   }, []);
 
-  const filteredRooms = rooms.filter((room) =>
-    room.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRooms = rooms
+    ? rooms.filter((room) =>
+        room.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   const handleRoomClick = (slug: string) => {
     window.location.href = `/room/${slug}`;
@@ -154,9 +149,7 @@ const Page = () => {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {room.updatedAt
-                            ? `Now playing: ${room.updatedAt}`
-                            : "No song playing"}
+                          test
                         </p>
                       </div>
                     </div>
