@@ -20,7 +20,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     if (!session) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    
+
     req.user = session.user;
     next();
   } catch (err) {

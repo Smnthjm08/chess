@@ -20,7 +20,11 @@ export default function AuthLayout({
   }, [isPending, data, error, router]);
 
   if (isPending) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader className="animate-spin"/> </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="animate-spin" />{" "}
+      </div>
+    );
   }
 
   return (

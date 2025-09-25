@@ -6,6 +6,8 @@
     "dev": "dotenv turbo run dev",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {

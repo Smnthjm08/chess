@@ -165,7 +165,7 @@ export default function SignUp() {
                       onResponse: (ctx) => {
                         setLoading(false);
                       },
-                    }
+                    },
                   );
                 }}
               >
@@ -211,7 +211,7 @@ export default function SignUp() {
                       onResponse: (ctx) => {
                         setLoading(false);
                       },
-                    }
+                    },
                   );
                 }}
               >

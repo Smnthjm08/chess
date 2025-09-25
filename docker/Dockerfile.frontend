@@ -1,0 +1,6 @@
+FROM oven/bun:latest
+
+WORKDIR /usr/src/app
+
+
+RUN bun install

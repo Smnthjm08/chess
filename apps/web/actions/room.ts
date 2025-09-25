@@ -10,9 +10,9 @@ export async function createRoomAction(data: roomTypes) {
   try {
     const userId = await getSessionUser();
     if (!userId) {
-      return { 
+      return {
         status: "failed",
-        message: "You must be logged in to create a room" 
+        message: "You must be logged in to create a room",
       };
     }
 
@@ -29,12 +29,12 @@ export async function createRoomAction(data: roomTypes) {
       // Generate a unique slug by appending a number
       let counter = 1;
       let uniqueSlug = `${slug}-${counter}`;
-      
+
       while (await prisma.room.findUnique({ where: { slug: uniqueSlug } })) {
         counter++;
         uniqueSlug = `${slug}-${counter}`;
       }
-      
+
       validatedData.slug = uniqueSlug;
     }
 
@@ -67,7 +67,7 @@ export async function createRoomAction(data: roomTypes) {
     };
   } catch (error: any) {
     console.error("Create Room Error:", error);
-    
+
     // Handle specific errors
     if (error.name === "ZodError") {
       return {
@@ -75,10 +75,10 @@ export async function createRoomAction(data: roomTypes) {
         message: "Invalid room data provided",
       };
     }
-    
+
     if (error.code === "P2002") {
       return {
-        status: "failed", 
+        status: "failed",
         message: "A room with this name already exists",
       };
     }
@@ -134,7 +134,8 @@ export async function getUserRooms() {
     console.error("Get User Rooms Error:", error);
     return {
       status: "failed",
-      message: error.message || "Something went wrong while fetching user rooms",
+      message:
+        error.message || "Something went wrong while fetching user rooms",
     };
   }
 }
@@ -163,7 +164,7 @@ export async function getAllPublicRooms() {
     });
 
     // Convert Date objects to strings to avoid React serialization issues
-    const serializedRooms = rooms.map(room => ({
+    const serializedRooms = rooms.map((room) => ({
       id: room.id,
       slug: room.slug,
       name: room.name,
@@ -184,7 +185,8 @@ export async function getAllPublicRooms() {
     console.error("Get Public Rooms Error:", error);
     return {
       status: "failed",
-      message: error.message || "Something went wrong while fetching public rooms",
+      message:
+        error.message || "Something went wrong while fetching public rooms",
       data: [],
     };
   }
@@ -221,7 +223,8 @@ export async function updateRoomAction(roomId: string, data: unknown) {
 
     const existing = await prisma.room.findUnique({ where: { id: roomId } });
     if (!existing) return { status: "failed", message: "Room not found" };
-    if (existing.hostId !== userId) return { status: "failed", message: "Not authorized" };
+    if (existing.hostId !== userId)
+      return { status: "failed", message: "Not authorized" };
 
     const room = await prisma.room.update({
       where: { id: roomId },
@@ -249,7 +252,8 @@ export async function deleteRoomAction(roomId: string) {
 
     const existing = await prisma.room.findUnique({ where: { id: roomId } });
     if (!existing) return { status: "failed", message: "Room not found" };
-    if (existing.hostId !== userId) return { status: "failed", message: "Not authorized" };
+    if (existing.hostId !== userId)
+      return { status: "failed", message: "Not authorized" };
 
     await prisma.room.delete({ where: { id: roomId } });
 

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Room } from "app/page";
 import React, { createContext, useState } from "react";
@@ -23,7 +23,9 @@ export const RoomProvider = ({ children }: { children: React.ReactNode }) => {
   const [usersInRoom, setUsersInRoom] = useState<UsersInRoomType[] | []>([]);
 
   return (
-    <RoomContext.Provider value={{ room, setRoom, usersInRoom, setUsersInRoom }}>
+    <RoomContext.Provider
+      value={{ room, setRoom, usersInRoom, setUsersInRoom }}
+    >
       {children}
     </RoomContext.Provider>
   );

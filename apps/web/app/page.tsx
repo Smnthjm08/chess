@@ -18,8 +18,6 @@ import { getAllPublicRooms } from "@/actions/room";
 import { toast } from "sonner";
 import { Room } from "types/room.types";
 
-
-
 const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -30,7 +28,7 @@ const Page = () => {
       setIsLoading(true);
       const result = await getAllPublicRooms();
       const data = result?.data;
-      console.log("Rooms", result)
+      console.log("Rooms", result);
 
       if (result.status === "success") {
         setRooms(data);
@@ -51,7 +49,7 @@ const Page = () => {
 
   const filteredRooms = rooms
     ? rooms.filter((room) =>
-        room.name.toLowerCase().includes(searchQuery.toLowerCase())
+        room.name.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : [];
 
@@ -148,9 +146,7 @@ const Page = () => {
                             <Lock className="h-4 w-4 text-muted-foreground" />
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          test
-                        </p>
+                        <p className="text-sm text-muted-foreground">test</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

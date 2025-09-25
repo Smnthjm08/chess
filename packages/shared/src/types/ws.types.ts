@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 // 1️⃣ Event enum
-export const EventTypes = z.enum(["JOIN_ROOM", "EXIT_ROOM", "MESSAGE", "USER_UPDATE"]);
+export const EventTypes = z.enum([
+  "JOIN_ROOM",
+  "EXIT_ROOM",
+  "MESSAGE",
+  "USER_UPDATE",
+]);
 export type EventTypes = z.infer<typeof EventTypes>;
 
 // 2️⃣ Message schemas
