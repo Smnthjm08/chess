@@ -12,7 +12,8 @@ COPY ./apps/http-backend ./apps/http-backend
 
 RUN bun install
 RUN bun run db:generate
+RUN bun run build
 
 EXPOSE 5001
 
-CMD [ "bun", "run", "index.ts" ]
+CMD [ "bun", "run", "start:http-backend" ]

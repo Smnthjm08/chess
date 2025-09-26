@@ -1,6 +1,6 @@
 "use client";
 
-import { Room } from "app/page";
+import { Room } from "../../types/room.types";
 import React, { createContext, useState } from "react";
 
 export type UsersInRoomType = {

@@ -12,7 +12,8 @@ COPY ./apps/ws-backend ./apps/ws-backend
 
 RUN bun install
 RUN bun run db:generate
+RUN bun run build
 
-EXPOSE 5001
+EXPOSE 8080
 
-CMD [ "bun", "run", "index.ts" ]
+CMD [ "bun", "run", "start:ws-backend" ]

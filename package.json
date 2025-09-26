@@ -8,7 +8,10 @@
     "check-types": "turbo run check-types",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "start:web": "cd apps/web && bun run start",
+    "start:http-backend": "cd apps/web && bun run start",
+    "start:ws-backend": "cd apps/web && bun run start"
   },
   "devDependencies": {
     "dotenv-cli": "^10.0.0",
