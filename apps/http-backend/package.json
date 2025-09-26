@@ -3,7 +3,9 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch --smol run ./src/index.ts"
+    "dev": "bun --watch --smol run ./src/index.ts",
+    "start:http-backend": "bun dist/index.js",
+    "build": "bun build src/index.ts --outdir ./dist --target bun"
   },
   "peerDependencies": {
     "typescript": "^5"

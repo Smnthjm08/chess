@@ -35,6 +35,15 @@
     },
     "db:migrate": {
       "dependsOn": []
+    },
+    "start:web":{
+            "dependsOn": []
+    },
+    "start:http-backend":{
+            "dependsOn": []
+    },
+    "start:ws-backend":{
+            "dependsOn": []
     }
   }
 }
