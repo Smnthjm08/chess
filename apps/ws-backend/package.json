@@ -8,14 +8,20 @@
     "build": "bun build src/index.ts --outdir ./dist --target bun"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@repo/db": "workspace:*",
     "@repo/auth": "workspace:*",
-    "@repo/shared": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/chess.js": "^0.13.7",
+    "@types/ws": "^8.18.1"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "ws": "^8.18.3"
   }
 }

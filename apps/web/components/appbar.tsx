@@ -11,7 +11,7 @@ export function Appbar() {
   if (isPending) {
     return (
       <nav className="border-b flex flex-row h-14 justify-between px-8 sm:px-12 py-4 items-center">
-        <h3 className="font-extrabold">resonate</h3>
+        <h3 className="font-extrabold">chess</h3>
         <div className="space-x-2 sm:space-x-4">
           <Link href="/signup">
             <Button size="sm" variant="default" disabled>
@@ -31,7 +31,7 @@ export function Appbar() {
   return (
     <nav className="border-b flex flex-row h-14 justify-between px-8 sm:px-12 py-4 items-center">
       <Link href={"/"}>
-        <h3 className="font-extrabold">resonate</h3>
+        <h3 className="font-extrabold">chess</h3>
       </Link>
 
       {!data?.user ? (

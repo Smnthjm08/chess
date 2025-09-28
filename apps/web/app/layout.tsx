@@ -26,7 +26,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Appbar />
+          {/* <Appbar /> */}
           <main className="flex-1 overflow-auto">{children}</main>
           <Toaster />
         </ThemeProvider>

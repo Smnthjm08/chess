@@ -57,43 +57,43 @@ const Page = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!room || !session?.user || !room?.id) return;
+  // useEffect(() => {
+  //   if (!room || !session?.user || !room?.id) return;
 
-    const url = `${WS_URL}?roomId=${room?.id}`;
-    const ws = new WebSocket(url);
+  //   const url = `${WS_URL}?roomId=${room?.id}`;
+  //   const ws = new WebSocket(url);
 
-    ws.onopen = () => {
-      console.log("✅ Connected to WebSocket");
-    };
+  //   ws.onopen = () => {
+  //     console.log("✅ Connected to WebSocket");
+  //   };
 
-    ws.onmessage = (message) => {
-      const parsedMessage = JSON.parse(message.data);
+  //   ws.onmessage = (message) => {
+  //     const parsedMessage = JSON.parse(message.data);
 
-      switch (parsedMessage.event) {
-        case "USER_UPDATE":
-          setUsersInRoom(parsedMessage.payload.users);
-          break;
-        case "MESSAGE":
-          setMessages((prev) => [...prev, parsedMessage.payload]);
-          break;
-        default:
-          break;
-      }
-    };
+  //     switch (parsedMessage.event) {
+  //       case "USER_UPDATE":
+  //         setUsersInRoom(parsedMessage.payload.users);
+  //         break;
+  //       case "MESSAGE":
+  //         setMessages((prev) => [...prev, parsedMessage.payload]);
+  //         break;
+  //       default:
+  //         break;
+  //     }
+  //   };
 
-    ws.onclose = () => {
-      console.log("❌ WebSocket closed");
-    };
+  //   ws.onclose = () => {
+  //     console.log("❌ WebSocket closed");
+  //   };
 
-    ws.onerror = (err) => {
-      console.error("⚠️ WebSocket error:", err);
-    };
+  //   ws.onerror = (err) => {
+  //     console.error("⚠️ WebSocket error:", err);
+  //   };
 
-    return () => {
-      ws.close(1000, "Cleanup");
-    };
-  }, [session?.user, room]);
+  //   return () => {
+  //     ws.close(1000, "Cleanup");
+  //   };
+  // }, [session?.user, room]);
 
   return (
     <div className="h-[calc(100vh-3.5rem)] bg-background">

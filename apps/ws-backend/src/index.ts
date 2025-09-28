@@ -1,80 +1,13 @@
-import { prisma } from "@repo/db";
+// index.ts
+import { WebSocketServer } from "ws";
+import { GameManager } from "./game-manager";
 
-export enum EventTypes {
-  JOIN_ROOM = "JOIN_ROOM",
-  EXIT_ROOM = "EXIT_ROOM",
-  MESSAGE = "MESSAGE",
-  USER_UPDATE = "USER_UPDATE",
-}
+const wss: WebSocketServer = new WebSocketServer({ port: 8080 });
 
-// Map<roomId, Map<userId as key, userName as value>>
-const rooms: Record<string, Map<string, string>> = {};
+const gameManager = new GameManager();
 
-const server = Bun.serve({
-  port: 8080,
-  fetch(req, server) {
-    const url = new URL(req.url);
-    const roomId = url.searchParams.get("roomId");
-    if (!roomId) return new Response("Upgrade failed", { status: 500 });
+wss.on("connection", function connection(ws) {
+  gameManager.addUser(ws);
 
-    if (server.upgrade(req, { data: { roomId } })) return;
-    return new Response("Upgrade failed", { status: 500 });
-  },
-
-  websocket: {
-    open(ws) {
-      const { roomId } = ws.data as { roomId: string };
-      ws.subscribe(roomId);
-
-      // TEMP: assign a userId & userName (replace with real auth in production)
-      const userId = crypto.randomUUID();
-      const userName = `test-${userId.split("-")[0]}`;
-
-      if (!rooms[roomId]) rooms[roomId] = new Map();
-      rooms[roomId].set(userId, userName);
-
-      const joinMsg = {
-        event: EventTypes.JOIN_ROOM,
-        payload: { roomId, userId, userName },
-      };
-      server.publish(roomId, JSON.stringify(joinMsg));
-
-      const userUpdate = {
-        event: EventTypes.USER_UPDATE,
-        payload: {
-          roomId,
-          users: Array.from(rooms[roomId]).map(([id, name]) => ({
-            userId: id,
-            userName: name,
-          })),
-        },
-      };
-      server.publish(roomId, JSON.stringify(userUpdate));
-    },
-
-    async message(ws, msg) {
-      const { roomId } = ws.data as { roomId: string };
-      await prisma.room.create({
-        data: {
-          name: Math.round(2).toString(),
-          slug: Math.round(2).toString(),
-          hostId: "zQjifQUFGSGAlKfRa8axIj8ZfRsZg4H1",
-        },
-      });
-      if (!msg) return;
-      console.log("📩", msg.toString());
-      server.publish(roomId, msg);
-    },
-
-    close(ws) {
-      const { roomId } = ws.data as { roomId: string };
-      ws.unsubscribe(roomId);
-      console.log("❌ A user disconnected from", roomId);
-      server.publish(roomId, "A user left the room");
-    },
-
-    drain(ws) {},
-  },
+  ws.on("close", () => gameManager.removeUser(ws));
 });
-
-console.log("🎶 WS backend running at ws://localhost:8080/");
