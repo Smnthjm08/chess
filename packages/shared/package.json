@@ -11,6 +11,8 @@
     "@repo/typescript-config": "workspace:*"
   },
   "exports": {
+    "./auth/server": "./src/auth/index.ts",
+    "./auth/client": "./src/auth/client.ts",
     "./room": "./src/schemas/room.schema.ts",
     "./types/ws": "./src/types/index.ts"
   }

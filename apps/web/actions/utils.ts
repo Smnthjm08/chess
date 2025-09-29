@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@repo/auth/server";
+import { auth } from "@repo/shared/auth/server";
 import { headers } from "next/headers";
 
 export async function getSessionUser() {

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { auth } from "@repo/auth/server";
+import { auth } from "@repo/shared/auth/server";
 import { fromNodeHeaders } from "better-auth/node";
 import { userSessionType } from "../types/user.session";
 

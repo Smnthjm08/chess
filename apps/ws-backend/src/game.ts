@@ -22,7 +22,7 @@ export class Game {
         payload: {
           color: "white",
         },
-      })
+      }),
     );
     this.player2.send(
       JSON.stringify({
@@ -30,7 +30,7 @@ export class Game {
         payload: {
           color: "black",
         },
-      })
+      }),
     );
   }
 
@@ -44,7 +44,7 @@ export class Game {
         JSON.stringify({
           type: "error",
           message: "Not your turn",
-        })
+        }),
       );
       return;
     }
@@ -56,7 +56,7 @@ export class Game {
         JSON.stringify({
           type: "error",
           message: "Invalid move",
-        })
+        }),
       );
       return;
     }

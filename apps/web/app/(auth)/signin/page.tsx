@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { authClient } from "@repo/auth/client";
+import { authClient } from "@repo/shared/auth/client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

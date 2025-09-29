@@ -32,7 +32,10 @@ export default function ChessBoard({
                   const target = square?.square ?? null;
                   if (from && target && from !== target) {
                     socket.send(
-                      JSON.stringify({ type: "move", move: { from, to: target } })
+                      JSON.stringify({
+                        type: "move",
+                        move: { from, to: target },
+                      }),
                     );
                   }
                   setFrom(null);
@@ -40,8 +43,8 @@ export default function ChessBoard({
               }}
               className={`w-[72px] h-[72px] flex items-center justify-center text-black
                 ${(i + j) % 2 === 0 ? "bg-emerald-700" : "bg-amber-100"}
-                cursor-pointer text-2xl font-bold`}
-                >
+                cursor-pointer`}
+            >
               {square ? square.type : ""}
             </div>
           ))}

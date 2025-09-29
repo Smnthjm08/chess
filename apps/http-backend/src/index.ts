@@ -1,6 +1,6 @@
 import { toNodeHandler } from "better-auth/node";
 import express, { Request, Response } from "express";
-import { auth } from "@repo/auth/server";
+import { auth } from "@repo/shared/auth/server";
 import authMiddleware from "./middlewares/auth.middleware";
 import { prisma } from "@repo/db";
 

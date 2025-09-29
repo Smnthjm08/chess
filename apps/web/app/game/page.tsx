@@ -58,7 +58,7 @@ export default function Game() {
           socket.send(
             JSON.stringify({
               type: INIT_GAME,
-            })
+            }),
           );
         }}
       >

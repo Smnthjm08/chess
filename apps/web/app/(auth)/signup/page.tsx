@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Github, Loader2 } from "lucide-react";
-import { authClient } from "@repo/auth/client";
+import { authClient } from "@repo/shared/auth/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 

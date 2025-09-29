@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Music, Search } from "lucide-react";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@repo/auth/client";
+import { authClient } from "@repo/shared/auth/client";
 import Image from "next/image";
 
 const Page = () => {

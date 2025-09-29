@@ -3,10 +3,10 @@
 Web (Frontend)
 
 docker build \
-  -t resonate-web \
-  -f ./docker/Dockerfile.frontend \
-  --build-arg DATABASE_URL=postgres://postgres:postgres@localhost:5432/resonnate \
-  .
+ -t resonate-web \
+ -f ./docker/Dockerfile.frontend \
+ --build-arg DATABASE_URL=postgres://postgres:postgres@localhost:5432/resonnate \
+ .
 
 docker tag resonate-web smnthjm08/resonate-web:latest
 docker push smnthjm08/resonate-web:latest
@@ -35,10 +35,10 @@ Copy your .env.prod file to the server, e.g., /home/ubuntu/env/.env.prod.
 
 Running HTTP Backend
 sudo docker run -d \
-  --name http-backend \
-  --env-file /home/ubuntu/env/.env.prod \
-  -p 5001:5001 \
-  smnthjm08/resonate-http-backend:latest
+ --name http-backend \
+ --env-file /home/ubuntu/env/.env.prod \
+ -p 5001:5001 \
+ smnthjm08/resonate-http-backend:latest
 
 This runs the HTTP backend in detached mode, exposing port 5001.
 
