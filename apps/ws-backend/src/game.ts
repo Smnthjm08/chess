@@ -49,15 +49,41 @@ export class Game {
       return;
     }
 
-    // 2. Attempt the move
-    const result = this.board.move(move);
-    if (!result) {
+    // 2. Validate piece ownership (optional but recommended)
+    // @ts-ignore
+    const piece = this.board.get(move.from);
+    if (!piece) {
       socket.send(
         JSON.stringify({
           type: "error",
-          message: "Invalid move",
-        }),
+          message: "No piece at source square",
+        })
       );
+      return;
+    }
+
+    if ((isWhite && piece.color !== "w") || (!isWhite && piece.color !== "b")) {
+      socket.send(
+        JSON.stringify({
+          type: "error",
+          message: "Cannot move opponent's piece",
+        })
+      );
+      return;
+    }
+
+    console.log(
+      "=============move=============",
+      move,
+      "\nmoves\n",
+      this.moves
+    );
+
+    // 3. Attempt the move
+    const result = this.board.move(move);
+    if (!result) {
+      console.error(`Invalid move attempted: ${JSON.stringify(move)}`);
+      socket.send(JSON.stringify({ type: "error", message: "Invalid move" }));
       return;
     }
 
@@ -77,12 +103,14 @@ export class Game {
     if (this.board.isGameOver()) {
       let winner: "white" | "black" | "draw";
 
-      if (this.board.isDraw()) {
+      if (this.board.isDraw() || this.board.isStalemate()) {
         winner = "draw";
+      } else if (this.board.isCheckmate()) {
+        // If checkmate, the player who just moved wins
+        // currentTurn is now the OTHER player (who has no moves)
+        winner = currentTurn === "w" ? "black" : "white";
       } else {
-        // If game is over and turn() still returns the side *to move*,
-        // the winner is the opposite of that side
-        winner = currentTurn === "w" ? "white" : "black";
+        winner = "draw"; // Fallback
       }
 
       const endPayload = {

@@ -17,7 +17,6 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@repo/db": "workspace:*",
-    "@repo/auth": "workspace:*",
     "@types/bun": "latest",
     "@types/express": "^5.0.3"
   }

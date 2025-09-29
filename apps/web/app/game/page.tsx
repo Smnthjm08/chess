@@ -16,20 +16,27 @@ export default function Game() {
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
+
+      if (message.type === "error") {
+        console.log("error move", message.message);
+      }
+
       console.log(message);
       switch (message.type) {
-        case INIT_GAME:
+        case INIT_GAME: {
           setChess(new Chess());
           setBoard(chess.board());
           console.log("game initialized");
           break;
+        }
 
-        case MOVE:
+        case MOVE: {
           const move = message.payload.move;
           chess.move(move);
           setBoard(chess.board());
           console.log("move made");
           break;
+        }
 
         case GAME_OVER:
           console.log("game over");
@@ -58,7 +65,7 @@ export default function Game() {
           socket.send(
             JSON.stringify({
               type: INIT_GAME,
-            }),
+            })
           );
         }}
       >

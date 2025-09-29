@@ -8,7 +8,6 @@
     "build": "bun build src/index.ts --outdir ./dist --target bun"
   },
   "devDependencies": {
-    "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/shared": "workspace:*",
