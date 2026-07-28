@@ -1,21 +1,12 @@
 {
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-        "@/components/*": ["components/*"],
-        "@/lib/*": ["lib/*"],
-        "@/utils/*": ["utils/*"],
-        "@/actions/*": ["actions/*"],
-        "@/hooks/*": ["hooks/*"]
-        // Add more aliases as needed
-        },
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "forceConsistentCasingInFileNames": true
+    "strictNullChecks": true
   },
   "include": [
     "**/*.ts",
@@ -24,7 +15,5 @@
     "next.config.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

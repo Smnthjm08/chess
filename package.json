@@ -1,33 +1,29 @@
 {
-  "name": "with-tailwind",
+  "name": "chess",
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "dotenv turbo run dev",
+    "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "check-types": "turbo run check-types",
-    "db:generate": "turbo run db:generate",
-    "db:migrate": "turbo run db:migrate",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "start:web": "turbo run start:web",
-    "start:http-backend": "turbo run start:http-backend",
-    "start:ws-backend": "turbo run start:ws-backend"
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "dotenv-cli": "^10.0.0",
-    "prettier": "^3.6.0",
-    "prettier-plugin-tailwindcss": "^0.6.11",
-    "turbo": "^2.5.6"
+    "prettier": "^3.7.4",
+    "turbo": "^2.10.7",
+    "typescript": "5.9.2"
   },
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "bun@1.2.20",
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.3.11"
+    }
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "dependencies": {
-    "better-auth": "^1.3.11"
-  }
+  ]
 }
