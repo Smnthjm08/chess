@@ -83,9 +83,26 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    /** The envelope still carries a payload on failure — see `activeGameId`. */
+    readonly data: unknown = null,
   ) {
     super(message);
   }
+}
+
+/**
+ * A player may hold only one active game, so creating or joining a second one
+ * is refused with the id of the game they are already in — enough for the UI
+ * to offer a way back to it instead of a dead end.
+ */
+export function activeGameIdFrom(error: unknown): string | null {
+  if (!(error instanceof ApiError) || typeof error.data !== "object") {
+    return null;
+  }
+
+  const id = (error.data as { activeGameId?: unknown } | null)?.activeGameId;
+
+  return typeof id === "string" ? id : null;
 }
 
 /**
@@ -107,7 +124,11 @@ async function request<T>(
   const body = (await response.json()) as Envelope<T>;
 
   if (!response.ok || !body.success) {
-    throw new ApiError(body.error ?? response.statusText, response.status);
+    throw new ApiError(
+      body.error ?? response.statusText,
+      response.status,
+      body.data,
+    );
   }
 
   return body;

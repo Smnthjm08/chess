@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ApiError, createGame } from "@/lib/api";
+import { activeGameIdFrom, createGame } from "@/lib/api";
+import { ensureSession } from "@/lib/auth-client";
 
 export function CreateGameButton() {
   const router = useRouter();
@@ -14,11 +15,20 @@ export function CreateGameButton() {
     setPending(true);
 
     try {
+      await ensureSession();
+
       const { data } = await createGame();
       router.push(`/game/${data.id}`);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        router.push("/login");
+      const elsewhere = activeGameIdFrom(error);
+
+      if (elsewhere) {
+        toast.error("You are already in an active game.", {
+          action: {
+            label: "Go there",
+            onClick: () => router.push(`/game/${elsewhere}`),
+          },
+        });
         return;
       }
 

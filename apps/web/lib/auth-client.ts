@@ -22,6 +22,26 @@ export const MIN_USERNAME_LENGTH = 3;
 export const MAX_USERNAME_LENGTH = 30;
 export const MIN_PASSWORD_LENGTH = 8;
 
+/**
+ * Anything that needs a seat calls this first: an invite link should be one
+ * click from playing, so a signed-out visitor is given a guest account rather
+ * than a detour through /login. They can still upgrade it later and keep the
+ * games — see `linkGuestGames` in @repo/auth.
+ */
+export async function ensureSession(): Promise<SessionUser> {
+  const { data: existing } = await authClient.getSession();
+
+  if (existing) return existing.user;
+
+  const { data: created, error } = await authClient.signIn.anonymous();
+
+  if (error || !created) {
+    throw new Error(error?.message ?? "Could not start a guest session.");
+  }
+
+  return created.user as SessionUser;
+}
+
 export function accountLabel(user: SessionUser) {
   return (
     user.displayUsername?.trim() || user.username?.trim() || user.name.trim()
