@@ -12,7 +12,22 @@ export const authClient = createAuthClient({
   plugins: [anonymousClient(), usernameClient()],
 });
 
-export const { useSession, signOut } = authClient;
+export const { useSession } = authClient;
+
+/**
+ * Keep logout behavior consistent across the header and auth screens. Better
+ * Auth returns failures in-band, so callers should not have to remember to
+ * inspect the response before refreshing their session UI.
+ */
+export async function signOut() {
+  const result = await authClient.signOut();
+
+  if (result.error) {
+    throw new Error(result.error.message ?? "Could not sign you out.");
+  }
+
+  return result;
+}
 
 export type SessionUser = typeof authClient.$Infer.Session.user;
 
@@ -21,6 +36,17 @@ export const USERNAME_PATTERN = /^[a-zA-Z0-9_.]+$/;
 export const MIN_USERNAME_LENGTH = 3;
 export const MAX_USERNAME_LENGTH = 30;
 export const MIN_PASSWORD_LENGTH = 8;
+
+/** Mirrors the plugin's rules, so the form fails before the API does. */
+export function validateUsername(username: string) {
+  if (username.length < MIN_USERNAME_LENGTH)
+    return `Username needs at least ${MIN_USERNAME_LENGTH} characters.`;
+  if (username.length > MAX_USERNAME_LENGTH)
+    return `Username can be at most ${MAX_USERNAME_LENGTH} characters.`;
+  if (!USERNAME_PATTERN.test(username))
+    return "Username can only use letters, numbers, underscores and dots.";
+  return null;
+}
 
 /**
  * Anything that needs a seat calls this first: an invite link should be one

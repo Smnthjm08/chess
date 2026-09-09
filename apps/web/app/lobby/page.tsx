@@ -1,15 +1,13 @@
-import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { CreateGameButton } from "@/components/game/create-game-button";
-import { StatusBadge } from "@/components/game/status-badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { GameRow } from "@/components/game/game-row";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { listGames, playerLabel, type Game } from "@/lib/api";
+import { listGames, type Game } from "@/lib/api";
 
 async function loadGames() {
   try {
@@ -63,23 +61,7 @@ export default async function LobbyPage() {
           <ul className="space-y-3">
             {games.map((game) => (
               <li key={game.id}>
-                <Link href={`/game/${game.id}`} className="block">
-                  <Card className="hover:border-hairline-strong transition-colors">
-                    <CardContent className="flex items-center gap-4">
-                      <StatusBadge status={game.status} />
-
-                      <span className="text-sm">
-                        {playerLabel(game.white)}
-                        <span className="text-muted-foreground px-2">vs</span>
-                        {playerLabel(game.black)}
-                      </span>
-
-                      <code className="text-muted-foreground ml-auto font-mono text-xs">
-                        {game.id.slice(0, 8)}
-                      </code>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <GameRow game={game} />
               </li>
             ))}
           </ul>

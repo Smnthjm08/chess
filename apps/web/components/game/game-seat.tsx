@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AuthDialog } from "@/components/auth/auth-dialog";
 import { InviteLink } from "@/components/game/invite-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +36,6 @@ export function GameSeat({
   viewerId: string | null;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const [joining, setJoining] = useState(false);
 
@@ -116,12 +115,11 @@ export function GameSeat({
         {userId ? null : (
           <p className="text-muted-foreground text-xs">
             You will join as a guest.{" "}
-            <Link
-              href={`/login?next=${encodeURIComponent(pathname)}`}
-              className="text-primary underline"
-            >
-              Sign in
-            </Link>{" "}
+            <AuthDialog defaultMode="signin">
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                Sign in
+              </Button>
+            </AuthDialog>{" "}
             instead to keep this game on your account.
           </p>
         )}

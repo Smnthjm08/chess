@@ -4,6 +4,7 @@ import { type Game, GameStatus, prisma } from "@repo/db";
 import { scheduleClockExpiry } from "../sockets/clock-expiry";
 import { gameSocketManager } from "../sockets/game-socket";
 import { withGameLock } from "../sockets/game-lock";
+import { playerSelect } from "../utils/player-select";
 
 export const createGame = async (req: Request, res: Response) => {
   try {
@@ -58,14 +59,6 @@ export const createGame = async (req: Request, res: Response) => {
     });
   }
 };
-
-// Guests have no `username` — the anonymous plugin puts their handle in `name`.
-const playerSelect = {
-  id: true,
-  name: true,
-  username: true,
-  displayUsername: true,
-} as const;
 
 type SeatResult =
   | { status: "ok"; game: Game; role: "white" | "black" }

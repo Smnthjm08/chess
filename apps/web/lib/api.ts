@@ -36,6 +36,18 @@ export function playerLabel(player: Player | null, fallback = "Open seat") {
   );
 }
 
+/**
+ * Profile links prefer the username and fall back to the id, so guests — who
+ * never get one — are still linkable. `GET /users/:handle` resolves both.
+ */
+export function profileHandle(
+  player: Pick<Player, "id" | "username"> | null,
+): string | null {
+  if (!player) return null;
+
+  return player.username?.trim() || player.id;
+}
+
 export type Game = {
   id: string;
   status: GameStatus;
@@ -63,6 +75,25 @@ export type Move = {
 };
 
 export type GameDetail = Game & { moves: Move[] };
+
+export type ProfileUser = Player & {
+  image: string | null;
+  isAnonymous: boolean;
+  createdAt: string;
+};
+
+export type ProfileStats = {
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+};
+
+export type Profile = {
+  user: ProfileUser;
+  stats: ProfileStats;
+  games: Game[];
+};
 
 export type Pagination = {
   page: number;
@@ -163,4 +194,8 @@ export async function joinGame(gameId: string) {
     `/games/${gameId}/join`,
     { method: "POST" },
   );
+}
+
+export async function getProfile(handle: string) {
+  return request<Profile>(`/users/${encodeURIComponent(handle)}`);
 }
