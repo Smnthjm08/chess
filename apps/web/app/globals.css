@@ -30,6 +30,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-piece-light: var(--piece-light);
+  --color-piece-dark: var(--piece-dark);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -122,11 +124,79 @@
 }
 
 /*
- * DESIGN.md documents no light-mode surface, so :root carries the dark palette
- * and .dark restates it — the next-themes class toggle is intentionally inert.
+ * Two palettes on the same token names. The raw ramp is neutral in both; the
+ * brand yellow has to darken for light mode, where #faff69 is barely separable
+ * from white. `--accent` is deliberately not `--popover` here so menu hover is
+ * visible against the white popup.
  */
-:root,
+:root {
+  color-scheme: light;
+
+  --radius: 0.5rem;
+
+  /* raw brand ramp */
+  --canvas: oklch(0.9911 0 0); /* #fcfcfc */
+  --surface-soft: oklch(0.9702 0 0); /* #f5f5f5 */
+  --surface-card: oklch(0.8687 0 0); /* #d4d4d4 */
+  --surface-elevated: oklch(0.9612 0 0); /* #f2f2f2 */
+  --hairline: oklch(0.9219 0 0); /* #e5e5e5 */
+  --hairline-strong: oklch(0.8452 0 0); /* #cccccc */
+  --body: oklch(0.3711 0 0); /* #404040 */
+  --body-strong: oklch(0.2178 0 0); /* #1a1a1a */
+  --muted-soft: oklch(0.556 0 0); /* #737373 */
+  --primary-active: oklch(0.74 0.155 105); /* #baaf0c */
+  --primary-disabled: oklch(0.94 0.045 105); /* #efedcb */
+  --on-yellow: oklch(0.1448 0 0); /* #0a0a0a */
+  --success: oklch(0.627 0.17 149.58); /* #12a34b */
+  --warning: oklch(0.666 0.145 70.08); /* #cb8100 */
+  --info: oklch(0.546 0.215 259.81); /* #0866ea */
+
+  /* board pieces — not theme-derived: the armies stay white and black in
+     both palettes, and each is stroked with the other so a piece reads on a
+     square of its own tone. */
+  --piece-light: oklch(1 0 0); /* #ffffff */
+  --piece-dark: oklch(0.1448 0 0); /* #0a0a0a */
+
+  /* semantic mapping */
+  --background: var(--canvas);
+  --foreground: oklch(0.1448 0 0); /* #0a0a0a */
+  --card: oklch(1 0 0); /* #ffffff */
+  --card-foreground: oklch(0.1448 0 0);
+  --popover: oklch(1 0 0); /* #ffffff */
+  --popover-foreground: oklch(0.1448 0 0);
+  --primary: oklch(0.8 0.165 105); /* #cec21a */
+  --primary-foreground: var(--on-yellow);
+  --secondary: var(--surface-soft);
+  --secondary-foreground: oklch(0.1448 0 0);
+  --muted: var(--surface-soft);
+  --muted-foreground: oklch(0.556 0 0); /* #737373 */
+  --accent: var(--hairline);
+  --accent-foreground: oklch(0.1448 0 0);
+  --destructive: oklch(0.577 0.215 27.325); /* #dc2626 */
+  --destructive-foreground: oklch(1 0 0);
+  --border: var(--hairline);
+  --input: var(--hairline-strong);
+  --ring: var(--primary);
+
+  --chart-1: var(--primary);
+  --chart-2: var(--info);
+  --chart-3: var(--success);
+  --chart-4: var(--warning);
+  --chart-5: var(--muted-soft);
+
+  --sidebar: var(--canvas);
+  --sidebar-foreground: var(--body);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--on-yellow);
+  --sidebar-accent: var(--surface-soft);
+  --sidebar-accent-foreground: oklch(0.1448 0 0);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--primary);
+}
+
 .dark {
+  color-scheme: dark;
+
   --radius: 0.5rem;
 
   /* raw brand ramp */
@@ -192,12 +262,30 @@
   }
   html {
     @apply font-sans;
-    color-scheme: dark;
   }
   h1,
   h2,
   h3,
   h4 {
     @apply text-foreground;
+  }
+}
+
+@layer components {
+  /*
+   * `paint-order` keeps the stroke behind the fill so it rims the glyph
+   * instead of eating into it; the em width tracks the board's fluid size.
+   */
+  .piece {
+    paint-order: stroke fill;
+    -webkit-text-stroke: 0.028em var(--piece-dark);
+  }
+  .piece-white {
+    color: var(--piece-light);
+    -webkit-text-stroke-color: var(--piece-dark);
+  }
+  .piece-black {
+    color: var(--piece-dark);
+    -webkit-text-stroke-color: var(--piece-light);
   }
 }

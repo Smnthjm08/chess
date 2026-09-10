@@ -6,6 +6,7 @@ import { useState } from "react";
 import { LogOutIcon, UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth/auth-dialog";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -184,7 +185,8 @@ export function SiteHeader() {
           </Link>
         </nav>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <ThemeToggle />
           <AccountMenu />
         </div>
       </div>

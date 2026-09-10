@@ -1,8 +1,15 @@
 "use client";
 
+import {
+  createEngine,
+  EventType,
+  getActiveTurn,
+  tryMove,
+} from "@repo/game-core";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
-import { Board } from "@/components/game/board";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Board, type MoveIntent } from "@/components/game/board";
 import { GameSeat } from "@/components/game/game-seat";
 import { StatusBadge } from "@/components/game/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,12 +114,33 @@ export function LiveGame({
 
   const onSync = useCallback(() => router.refresh(), [router]);
 
-  const { state, status } = useGameSocket({
+  const { state, status, error, send } = useGameSocket({
     gameId: initialGame.id,
     // The upgrade needs a session; a signed-out visitor reads the static page.
     enabled: Boolean(viewerId),
     onSync,
   });
+
+  const [optimistic, setOptimistic] = useState<{
+    fen: string;
+    from: string;
+    to: string;
+  } | null>(null);
+
+  // Every `game:state` is authoritative — the local position only ever stands
+  // in for the round trip, so any state that lands supersedes it.
+  useEffect(() => {
+    setOptimistic(null);
+  }, [state]);
+
+  // A rejected move never happened; give the board back the last position the
+  // server confirmed.
+  useEffect(() => {
+    if (!error) return;
+
+    setOptimistic(null);
+    toast.error(error.message);
+  }, [error]);
 
   // `game:state` is authoritative for everything it carries. Player names are
   // not among them, so those stay on the server-rendered game until a refresh.
@@ -129,14 +157,53 @@ export function LiveGame({
       }
     : initialGame;
 
+  const fen = optimistic?.fen ?? game.fen;
   const orientation = state?.role === "black" ? "black" : "white";
-  const turn = state?.turn ?? null;
+  // Read off the displayed position rather than `state.turn`, so an optimistic
+  // move hands the move over immediately and the board locks behind it.
+  const turn = getActiveTurn(fen);
   const live = game.status === "ACTIVE";
   const rows = toRows(initialGame.moves);
 
+  const played = initialGame.moves.at(-1);
+  const lastMove =
+    optimistic ?? (played ? { from: played.from, to: played.to } : null);
+
+  const handleMove = useCallback(
+    (move: MoveIntent) => {
+      const result = tryMove(createEngine(fen), move);
+
+      // The board only offers legal moves; a miss means the position moved
+      // under it, and the server would reject it anyway.
+      if (!result) return;
+
+      const sent = send({
+        type: EventType.GAME_MOVE,
+        gameId: initialGame.id,
+        data: move,
+      });
+
+      if (!sent) {
+        toast.error("Not connected — your move was not sent.");
+        return;
+      }
+
+      setOptimistic({ fen: result.fen, from: result.from, to: result.to });
+    },
+    [fen, send, initialGame.id],
+  );
+
   return (
     <main className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Board fen={game.fen} orientation={orientation} />
+      <Board
+        fen={fen}
+        orientation={orientation}
+        selectable={
+          state?.role === turn && live && status === "open" && !optimistic
+        }
+        lastMove={lastMove}
+        onMove={handleMove}
+      />
 
       <aside className="space-y-4">
         <GameSeat game={game} viewerId={viewerId} />

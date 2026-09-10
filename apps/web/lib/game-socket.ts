@@ -13,6 +13,12 @@ export type GameState = Extract<
   { type: EventType.GAME_STATE }
 >["data"];
 
+/**
+ * Errors are events, not state: two identical rejections in a row have to read
+ * as two, or a consumer diffing on the message alone misses the second.
+ */
+export type SocketError = { message: string; id: number };
+
 export type ConnectionStatus =
   "idle" | "connecting" | "open" | "reconnecting" | "closed";
 
@@ -56,7 +62,9 @@ export function useGameSocket({
     enabled ? "connecting" : "idle",
   );
   const [state, setState] = useState<GameState | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SocketError | null>(null);
+
+  const errorSeq = useRef(0);
 
   const socketRef = useRef<WebSocket | null>(null);
   const onSyncRef = useRef(onSync);
@@ -138,7 +146,7 @@ export function useGameSocket({
             break;
 
           case EventType.GAME_ERROR:
-            setError(message.data.message);
+            setError({ message: message.data.message, id: ++errorSeq.current });
             break;
 
           default:
@@ -155,7 +163,10 @@ export function useGameSocket({
         // take it back, and the two tabs would trade it indefinitely.
         if (event.code === REPLACED_BY_NEW_CONNECTION) {
           setStatus("closed");
-          setError("This game was opened in another tab.");
+          setError({
+            message: "This game was opened in another tab.",
+            id: ++errorSeq.current,
+          });
           return;
         }
 
