@@ -78,6 +78,8 @@ export type ServerMessage =
         result: string | null;
         winnerId: string | null;
         role: GameRole;
+        /** The player whose draw offer is standing, or null. */
+        drawOffer: string | null;
       };
     }
   | {

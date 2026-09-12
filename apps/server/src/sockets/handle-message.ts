@@ -10,7 +10,7 @@ import type { RawData, WebSocket } from "ws";
 import { gameSocketManager } from "./game-socket";
 import { sendMessage } from "./send";
 import { clientMessageSchema } from "./schema";
-import { reconcileTurnClock } from "./clock";
+import { reconcileTurnClock, remainingMs } from "./clock";
 import { cancelAbandonment } from "./abandonment";
 import { scheduleClockExpiry } from "./clock-expiry";
 import { clockTimerStore } from "./timer-store";
@@ -154,12 +154,24 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
 
       const activeTurn = getActiveTurn(game.fen);
 
+      // The stored clock is only true as of `lastMoveAt`. Every other
+      // `game:state` is sent the instant it becomes true, but a join lands
+      // mid-turn, so the running side has to be brought up to now — otherwise
+      // a reconnecting client ticks down from a number that is already spent.
+      const running = remainingMs(game);
+
       gameSocketManager.sendGameState(socket, message.gameId, {
         fen: game.fen,
         whiteId: game.whiteId,
         blackId: game.blackId,
-        whiteTimeMs: game.whiteTimeMs,
-        blackTimeMs: game.blackTimeMs,
+        whiteTimeMs:
+          running !== null && activeTurn === "white"
+            ? running
+            : game.whiteTimeMs,
+        blackTimeMs:
+          running !== null && activeTurn === "black"
+            ? running
+            : game.blackTimeMs,
         status: game.status,
         turn: activeTurn,
         result: game.result,

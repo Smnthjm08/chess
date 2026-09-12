@@ -1,11 +1,14 @@
 import { EventType, type GameRole, type ServerMessage } from "@repo/game-core";
 import type WebSocket from "ws";
 import { sendMessage } from "./send";
+import { drawOfferStore } from "./draw-offer-store";
 
 type Session = { userId: string; gameId: string };
+// `role` and `drawOffer` are per-recipient and per-game rather than per-event,
+// so `sendGameState` resolves both and no call site passes them.
 type GameStateData = Omit<
   Extract<ServerMessage, { type: EventType.GAME_STATE }>["data"],
-  "role"
+  "role" | "drawOffer"
 >;
 
 function getRole(
@@ -151,6 +154,7 @@ export class GameSocketManager {
       data: {
         ...data,
         role: getRole(session.userId, data.whiteId, data.blackId),
+        drawOffer: drawOfferStore.get(gameId) ?? null,
       },
     });
   }

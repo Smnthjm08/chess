@@ -4,12 +4,18 @@ import { finishGame } from "./finish-game";
 import { gameSocketManager } from "./game-socket";
 import { withGameLock } from "./game-lock";
 
+const DEFAULT_ABANDON_GRACE_MS = 60_000;
+
 /**
  * How long a disconnected player has to come back before they forfeit. Fixed
  * rather than adaptive: the opponent's claim to the win depends on this
  * deadline, so it has to be the same every time and countable down in a UI.
+ *
+ * The override exists so the suites can exercise a forfeit without a minute of
+ * real waiting; a deployment should leave it alone.
  */
-export const ABANDON_GRACE_MS = 60_000;
+export const ABANDON_GRACE_MS =
+  Number(process.env.ABANDON_GRACE_MS) || DEFAULT_ABANDON_GRACE_MS;
 
 const key = (gameId: string, userId: string) => `${gameId}:${userId}`;
 
