@@ -17,13 +17,84 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GameStatus } from "@/lib/api";
 
 export type GameAction =
-  "resign" | "draw:offer" | "draw:accept" | "draw:decline" | "pause" | "resume";
+  | "resign"
+  | "draw:offer"
+  | "draw:accept"
+  | "draw:decline"
+  | "pause"
+  | "resume"
+  | "rematch:offer"
+  | "rematch:accept"
+  | "rematch:decline";
+
+function RematchCard({
+  offer,
+  viewerId,
+  connected,
+  onAction,
+}: {
+  offer: string | null;
+  viewerId: string;
+  connected: boolean;
+  onAction: (action: GameAction) => void;
+}) {
+  const mine = offer === viewerId;
+  const theirs = offer !== null && !mine;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Rematch</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {theirs ? (
+          <>
+            <p className="text-sm">Your opponent wants a rematch.</p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                disabled={!connected}
+                onClick={() => onAction("rematch:accept")}
+              >
+                Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!connected}
+                onClick={() => onAction("rematch:decline")}
+              >
+                Decline
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!connected || mine}
+            onClick={() => onAction("rematch:offer")}
+          >
+            {mine ? "Rematch offered" : "Offer rematch"}
+          </Button>
+        )}
+
+        <p className="text-muted-foreground text-xs">
+          {mine
+            ? "Waiting for your opponent to answer."
+            : "Colours swap — you will play the other side."}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function GameControls({
   role,
   turn,
   status,
   drawOffer,
+  rematchOffer,
   viewerId,
   connected,
   onAction,
@@ -33,6 +104,8 @@ export function GameControls({
   status: GameStatus;
   /** The id of the player whose draw offer is standing, if any. */
   drawOffer: string | null;
+  /** The id of the player whose rematch offer is standing, if any. */
+  rematchOffer: string | null;
   viewerId: string | null;
   connected: boolean;
   onAction: (action: GameAction) => void;
@@ -43,7 +116,22 @@ export function GameControls({
   // turn, so a paused game still offers both.
   const inProgress = status === "ACTIVE" || status === "PAUSED";
 
-  if (role === "spectator" || !viewerId || !inProgress) return null;
+  if (role === "spectator" || !viewerId) return null;
+
+  // The game is over: nothing is left to resign or agree, but the two players
+  // can start again.
+  if (status === "FINISHED") {
+    return (
+      <RematchCard
+        offer={rematchOffer}
+        viewerId={viewerId}
+        connected={connected}
+        onAction={onAction}
+      />
+    );
+  }
+
+  if (!inProgress) return null;
 
   const mine = drawOffer === viewerId;
   const theirs = drawOffer !== null && !mine;

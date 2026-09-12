@@ -32,7 +32,8 @@ export type SocketNotice = {
   event:
     | EventType.GAME_RESIGN
     | EventType.GAME_DRAW_ACCEPT
-    | EventType.GAME_DRAW_DECLINE;
+    | EventType.GAME_DRAW_DECLINE
+    | EventType.GAME_REMATCH_DECLINE;
   userId: string;
   id: number;
 };
@@ -85,6 +86,12 @@ export function useGameSocket({
 
   /** The player whose draw offer is standing, or null. */
   const [drawOffer, setDrawOffer] = useState<string | null>(null);
+
+  /** The player whose rematch offer is standing, or null. */
+  const [rematchOffer, setRematchOffer] = useState<string | null>(null);
+
+  /** The game an accepted rematch created, for the players to move to. */
+  const [rematchGameId, setRematchGameId] = useState<string | null>(null);
 
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
 
@@ -154,6 +161,7 @@ export function useGameSocket({
             // The server's store is the authority — this is what carries a
             // standing offer across a reload or a reconnect.
             setDrawOffer(message.data.drawOffer);
+            setRematchOffer(message.data.rematchOffer);
 
             // Seats arrive as ids, and the page renders names — so a seat
             // changing hands (an opponent taking it over REST) has to refetch
@@ -182,6 +190,26 @@ export function useGameSocket({
 
           case EventType.GAME_DRAW_OFFER:
             setDrawOffer(message.data.userId);
+            break;
+
+          case EventType.GAME_REMATCH_OFFER:
+            setRematchOffer(message.data.userId);
+            break;
+
+          // A declined rematch clears the offer and says so once; the game it
+          // was offered in is already over, so there is no state to follow.
+          case EventType.GAME_REMATCH_DECLINE:
+            setRematchOffer(null);
+            setNotice({
+              event: message.type,
+              userId: message.data.userId,
+              id: ++eventSeq.current,
+            });
+            break;
+
+          case EventType.GAME_REMATCH_READY:
+            setRematchOffer(null);
+            setRematchGameId(message.data.rematchGameId);
             break;
 
           case EventType.GAME_DRAW_ACCEPT:
@@ -255,5 +283,15 @@ export function useGameSocket({
     return true;
   }, []);
 
-  return { state, status, error, notice, drawOffer, lastMove, send };
+  return {
+    state,
+    status,
+    error,
+    notice,
+    drawOffer,
+    rematchOffer,
+    rematchGameId,
+    lastMove,
+    send,
+  };
 }

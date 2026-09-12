@@ -65,6 +65,12 @@ function actionMessage(action: GameAction, gameId: string): ClientMessage {
       return { type: EventType.GAME_PAUSE, gameId };
     case "resume":
       return { type: EventType.GAME_RESUME, gameId };
+    case "rematch:offer":
+      return { type: EventType.GAME_REMATCH_OFFER, gameId };
+    case "rematch:accept":
+      return { type: EventType.GAME_REMATCH_ACCEPT, gameId };
+    case "rematch:decline":
+      return { type: EventType.GAME_REMATCH_DECLINE, gameId };
   }
 }
 
@@ -137,6 +143,8 @@ export function LiveGame({
     error,
     notice,
     drawOffer,
+    rematchOffer,
+    rematchGameId,
     lastMove: playedMove,
     send,
   } = useGameSocket({
@@ -147,6 +155,7 @@ export function LiveGame({
   });
 
   const role = state?.role ?? "spectator";
+  const playing = role === "white" || role === "black";
 
   const [optimistic, setOptimistic] = useState<{
     fen: string;
@@ -181,7 +190,6 @@ export function LiveGame({
 
     // These are broadcast to the whole room, spectators included, and every
     // second-person phrasing below is a lie to anyone who is not playing.
-    const playing = role === "white" || role === "black";
     const mine = notice.userId === viewerId;
 
     switch (notice.event) {
@@ -218,8 +226,26 @@ export function LiveGame({
             : "Your draw offer was declined.",
         );
         break;
+
+      case EventType.GAME_REMATCH_DECLINE:
+        if (!playing) break;
+
+        toast(
+          mine
+            ? "You declined the rematch."
+            : "Your rematch offer was declined.",
+        );
+        break;
     }
-  }, [notice, viewerId, role]);
+  }, [notice, viewerId, playing]);
+
+  // An accepted rematch is a different game. Only the two players are taken to
+  // it — a spectator stays with the board they were watching.
+  useEffect(() => {
+    if (!rematchGameId || !playing) return;
+
+    router.push(`/game/${rematchGameId}`);
+  }, [rematchGameId, playing, router]);
 
   // `game:state` is authoritative for everything it carries. Player names are
   // not among them, so those stay on the server-rendered game until a refresh.
@@ -386,6 +412,7 @@ export function LiveGame({
           turn={turn}
           status={ended ? "FINISHED" : game.status}
           drawOffer={drawOffer}
+          rematchOffer={rematchOffer}
           viewerId={viewerId}
           connected={status === "open"}
           onAction={handleAction}
@@ -426,6 +453,9 @@ export function LiveGame({
         onOpenChange={(next: boolean) => {
           if (!next) setResultSeen(true);
         }}
+        onRematch={
+          playing ? () => handleAction("rematch:offer") : undefined
+        }
       />
     </main>
   );

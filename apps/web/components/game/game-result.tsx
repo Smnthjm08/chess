@@ -19,11 +19,14 @@ export function GameResultDialog({
   viewerId,
   open,
   onOpenChange,
+  onRematch,
 }: {
   game: GameDetail;
   viewerId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Omitted for spectators, who have no rematch to offer. */
+  onRematch?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,7 +39,19 @@ export function GameResultDialog({
           <DialogClose render={<Button variant="outline" />}>
             Review the board
           </DialogClose>
-          <Button render={<Link href="/lobby" />}>Back to lobby</Button>
+          <Button variant="outline" render={<Link href="/lobby" />}>
+            Back to lobby
+          </Button>
+          {onRematch && (
+            <Button
+              onClick={() => {
+                onOpenChange(false);
+                onRematch();
+              }}
+            >
+              Offer rematch
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

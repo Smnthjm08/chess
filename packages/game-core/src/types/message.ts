@@ -45,6 +45,18 @@ export type ClientMessage =
   | {
       type: EventType.GAME_DRAW_DECLINE;
       gameId: string;
+    }
+  | {
+      type: EventType.GAME_REMATCH_OFFER;
+      gameId: string;
+    }
+  | {
+      type: EventType.GAME_REMATCH_ACCEPT;
+      gameId: string;
+    }
+  | {
+      type: EventType.GAME_REMATCH_DECLINE;
+      gameId: string;
     };
 
 // server -> client
@@ -80,6 +92,8 @@ export type ServerMessage =
         role: GameRole;
         /** The player whose draw offer is standing, or null. */
         drawOffer: string | null;
+        /** The player whose rematch offer is standing, or null. */
+        rematchOffer: string | null;
       };
     }
   | {
@@ -133,6 +147,29 @@ export type ServerMessage =
       gameId: string;
       data: {
         userId: string;
+      };
+    }
+  | {
+      type: EventType.GAME_REMATCH_OFFER;
+      gameId: string;
+      data: {
+        userId: string;
+      };
+    }
+  | {
+      type: EventType.GAME_REMATCH_DECLINE;
+      gameId: string;
+      data: {
+        userId: string;
+      };
+    }
+  | {
+      // `gameId` is the finished game the offer was made in; the rematch is a
+      // new game the players are expected to move to.
+      type: EventType.GAME_REMATCH_READY;
+      gameId: string;
+      data: {
+        rematchGameId: string;
       };
     }
   | {
