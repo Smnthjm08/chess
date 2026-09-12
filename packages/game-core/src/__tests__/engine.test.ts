@@ -171,7 +171,9 @@ describe("getLegalMoves", () => {
   });
 
   test("collapses the four promotion moves onto one square", () => {
-    expect(getLegalMoves("k7/4P3/8/8/8/8/8/K7 w - - 0 1", "e7")).toEqual(["e8"]);
+    expect(getLegalMoves("k7/4P3/8/8/8/8/8/K7 w - - 0 1", "e7")).toEqual([
+      "e8",
+    ]);
   });
 
   test("offers castling as a king move to its landing square", () => {

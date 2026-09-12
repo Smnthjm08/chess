@@ -103,9 +103,9 @@ export function AuthForm({
   // field ids have to be unique per instance for the labels to stay correct.
   const uid = useId();
   const [mode, setMode] = useState<AuthMode>(defaultMode);
-  const [pending, setPending] = useState<
-    null | "guest" | "signout" | AuthMode
-  >(null);
+  const [pending, setPending] = useState<null | "guest" | "signout" | AuthMode>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const [identifier, setIdentifier] = useState("");

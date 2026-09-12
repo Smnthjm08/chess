@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { clockAt, clockUrgency, formatClock, type ClockBaseline } from "../clock";
+import {
+  clockAt,
+  clockUrgency,
+  formatClock,
+  type ClockBaseline,
+} from "../clock";
 
 const baseline: ClockBaseline = {
   whiteTimeMs: 60_000,

@@ -57,7 +57,10 @@ function AccountMenu() {
   }
 
   const label = accountLabel(user);
-  const handle = profileHandle({ id: user.id, username: user.username ?? null });
+  const handle = profileHandle({
+    id: user.id,
+    username: user.username ?? null,
+  });
 
   async function runSignOut() {
     if (signingOut) return;
@@ -139,10 +142,7 @@ function AccountMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog
-        open={confirmingSignOut}
-        onOpenChange={setConfirmingSignOut}
-      >
+      <AlertDialog open={confirmingSignOut} onOpenChange={setConfirmingSignOut}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Sign out of your guest account?</AlertDialogTitle>

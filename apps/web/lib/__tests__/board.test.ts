@@ -22,9 +22,11 @@ describe("toSquares", () => {
   });
 
   test("turns run-length digits into empty squares", () => {
-    expect(toSquares(START_FEN).slice(16, 32).every((s) => s === null)).toBe(
-      true,
-    );
+    expect(
+      toSquares(START_FEN)
+        .slice(16, 32)
+        .every((s) => s === null),
+    ).toBe(true);
   });
 
   test("handles a sparse position", () => {

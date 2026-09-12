@@ -15,6 +15,8 @@ import { cancelAbandonment } from "./abandonment";
 import { scheduleClockExpiry } from "./clock-expiry";
 import { clockTimerStore } from "./timer-store";
 import { drawOfferStore } from "./draw-offer-store";
+import { rematchOfferStore } from "./rematch-offer-store";
+import { createRematch } from "./create-rematch";
 import { finishGame } from "./finish-game";
 import { gameEngineCache } from "./game-engine-cache";
 import { withGameLock } from "./game-lock";
@@ -54,12 +56,43 @@ async function loadGameForSocket(
 /** The position moved under us between the read and the write. */
 class StalePositionError extends Error {}
 
+
 /**
  * A game a player can still resign or agree a draw in. Unlike a move, neither
  * needs the clock to be running, so a paused game qualifies.
  */
 function isInProgress(status: GameStatus): boolean {
   return status === GameStatus.ACTIVE || status === GameStatus.PAUSED;
+}
+
+/**
+ * A rematch needs a finished game that had two players, with the caller as one
+ * of them. Same contract as `loadGameForSocket`: `null` means the client has
+ * been told why.
+ */
+function loadRematchPlayers(
+  socket: WebSocket,
+  game: Game,
+  userId: string,
+): { whiteId: string; blackId: string } | null {
+  const refuse = (message: string) => {
+    sendMessage(socket, { type: EventType.GAME_ERROR, data: { message } });
+    return null;
+  };
+
+  if (game.status !== GameStatus.FINISHED) {
+    return refuse("Only a finished game can be rematched");
+  }
+
+  if (!game.whiteId || !game.blackId) {
+    return refuse("This game never had two players");
+  }
+
+  if (userId !== game.whiteId && userId !== game.blackId) {
+    return refuse("Spectators cannot offer a rematch");
+  }
+
+  return { whiteId: game.whiteId, blackId: game.blackId };
 }
 
 export async function handleMessage(socket: WebSocket, raw: RawData) {
@@ -727,6 +760,147 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
 
       gameSocketManager.broadcast(message.gameId, {
         type: EventType.GAME_DRAW_DECLINE,
+        gameId: message.gameId,
+        data: { userId },
+      });
+      break;
+    }
+
+    case EventType.GAME_REMATCH_OFFER: {
+      const context = await loadGameForSocket(socket, message.gameId);
+
+      if (!context) return;
+
+      const { userId, game } = context;
+
+      if (!loadRematchPlayers(socket, game, userId)) return;
+
+      const offeredBy = rematchOfferStore.get(message.gameId);
+
+      if (offeredBy === userId) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "You already have a rematch offer pending" },
+        });
+        return;
+      }
+
+      if (offeredBy) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: {
+            message:
+              "Your opponent has already offered a rematch — accept or decline it",
+          },
+        });
+        return;
+      }
+
+      rematchOfferStore.set(message.gameId, userId);
+
+      gameSocketManager.broadcast(message.gameId, {
+        type: EventType.GAME_REMATCH_OFFER,
+        gameId: message.gameId,
+        data: { userId },
+      });
+      break;
+    }
+
+    case EventType.GAME_REMATCH_ACCEPT: {
+      const context = await loadGameForSocket(socket, message.gameId);
+
+      if (!context) return;
+
+      const { userId, game } = context;
+
+      const players = loadRematchPlayers(socket, game, userId);
+
+      if (!players) return;
+
+      // `handleMessage` already runs this whole dispatch under the game's
+      // lock, so the read-decide-create below is atomic as written: two accepts
+      // arriving together are serialized, and the second finds the offer that
+      // the first cleared already gone.
+      const offeredBy = rematchOfferStore.get(message.gameId);
+
+      if (!offeredBy) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "There is no rematch offer to accept" },
+        });
+        return;
+      }
+
+      if (offeredBy === userId) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "You cannot accept your own rematch offer" },
+        });
+        return;
+      }
+
+      // Either player may have started something else since this game ended.
+      const busy = await prisma.game.findFirst({
+        where: {
+          status: GameStatus.ACTIVE,
+          OR: [
+            { whiteId: { in: [players.whiteId, players.blackId] } },
+            { blackId: { in: [players.whiteId, players.blackId] } },
+          ],
+        },
+      });
+
+      if (busy) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "One of you is already in another active game" },
+        });
+        return;
+      }
+
+      const rematch = await createRematch(players);
+
+      rematchOfferStore.clear(message.gameId);
+
+      gameSocketManager.broadcast(message.gameId, {
+        type: EventType.GAME_REMATCH_READY,
+        gameId: message.gameId,
+        data: { rematchGameId: rematch.id },
+      });
+      break;
+    }
+
+    case EventType.GAME_REMATCH_DECLINE: {
+      const context = await loadGameForSocket(socket, message.gameId);
+
+      if (!context) return;
+
+      const { userId, game } = context;
+
+      if (!loadRematchPlayers(socket, game, userId)) return;
+
+      const offeredBy = rematchOfferStore.get(message.gameId);
+
+      if (!offeredBy) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "There is no rematch offer to decline" },
+        });
+        return;
+      }
+
+      if (offeredBy === userId) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "You cannot decline your own rematch offer" },
+        });
+        return;
+      }
+
+      rematchOfferStore.clear(message.gameId);
+
+      gameSocketManager.broadcast(message.gameId, {
+        type: EventType.GAME_REMATCH_DECLINE,
         gameId: message.gameId,
         data: { userId },
       });

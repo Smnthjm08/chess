@@ -26,4 +26,7 @@ export const clientMessageSchema: z.ZodType<ClientMessage> =
     gameIdOnly(EventType.GAME_DRAW_OFFER),
     gameIdOnly(EventType.GAME_DRAW_ACCEPT),
     gameIdOnly(EventType.GAME_DRAW_DECLINE),
+    gameIdOnly(EventType.GAME_REMATCH_OFFER),
+    gameIdOnly(EventType.GAME_REMATCH_ACCEPT),
+    gameIdOnly(EventType.GAME_REMATCH_DECLINE),
   ]);

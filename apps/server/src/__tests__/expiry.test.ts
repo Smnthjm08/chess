@@ -1,8 +1,19 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 import { GameStatus, prisma } from "@repo/db";
 import { START_FEN } from "@repo/game-core";
 import { seatedGame, signInAsGuest, TestClient } from "./helpers/client";
-import { resetDatabase, startTestServer, type TestServer } from "./helpers/server";
+import {
+  resetDatabase,
+  startTestServer,
+  type TestServer,
+} from "./helpers/server";
 
 /** Short enough to wait for, long enough not to fire on a slow reconnect. */
 const GRACE_MS = 700;

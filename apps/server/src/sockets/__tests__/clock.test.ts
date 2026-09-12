@@ -3,7 +3,8 @@ import { START_FEN } from "@repo/game-core";
 import { GameStatus } from "@repo/db";
 import { reconcileTurnClock, remainingMs, type ClockGame } from "../clock";
 
-const BLACK_TO_MOVE = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
+const BLACK_TO_MOVE =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
 
 /** A game whose turn started `agoMs` ago, against a fixed `now`. */
 function game(over: Partial<ClockGame> = {}, agoMs = 0): ClockGame {
