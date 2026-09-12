@@ -19,6 +19,24 @@ export type GameState = Extract<
  */
 export type SocketError = { message: string; id: number };
 
+/**
+ * Something that happened once, as opposed to something that is the case. A
+ * resignation or a declined offer has no lasting state to render — the game
+ * state that follows says everything — so they arrive with an id and are
+ * consumed as they land.
+ */
+/** The move the server last broadcast, for the board's from/to highlight. */
+export type LastMove = { from: string; to: string };
+
+export type SocketNotice = {
+  event:
+    | EventType.GAME_RESIGN
+    | EventType.GAME_DRAW_ACCEPT
+    | EventType.GAME_DRAW_DECLINE;
+  userId: string;
+  id: number;
+};
+
 export type ConnectionStatus =
   "idle" | "connecting" | "open" | "reconnecting" | "closed";
 
@@ -63,8 +81,14 @@ export function useGameSocket({
   );
   const [state, setState] = useState<GameState | null>(null);
   const [error, setError] = useState<SocketError | null>(null);
+  const [notice, setNotice] = useState<SocketNotice | null>(null);
 
-  const errorSeq = useRef(0);
+  /** The player whose draw offer is standing, or null. */
+  const [drawOffer, setDrawOffer] = useState<string | null>(null);
+
+  const [lastMove, setLastMove] = useState<LastMove | null>(null);
+
+  const eventSeq = useRef(0);
 
   const socketRef = useRef<WebSocket | null>(null);
   const onSyncRef = useRef(onSync);
@@ -127,6 +151,10 @@ export function useGameSocket({
           case EventType.GAME_STATE: {
             setState(message.data);
 
+            // The server's store is the authority — this is what carries a
+            // standing offer across a reload or a reconnect.
+            setDrawOffer(message.data.drawOffer);
+
             // Seats arrive as ids, and the page renders names — so a seat
             // changing hands (an opponent taking it over REST) has to refetch
             // even though the position itself is already up to date.
@@ -138,15 +166,37 @@ export function useGameSocket({
           }
 
           // A move also broadcasts `game:state`, which carries the new
-          // position; this is only the cue to re-read the SAN list.
+          // position. This frame carries what the position cannot: which
+          // squares were played, and the cue to re-read the SAN list.
           case EventType.GAME_MOVE:
+            setLastMove({ from: message.data.from, to: message.data.to });
+            // The server drops a standing offer as soon as a move is played.
+            setDrawOffer(null);
+            onSyncRef.current?.();
+            break;
+
           case EventType.GAME_JOIN:
           case EventType.GAME_LEAVE:
             onSyncRef.current?.();
             break;
 
+          case EventType.GAME_DRAW_OFFER:
+            setDrawOffer(message.data.userId);
+            break;
+
+          case EventType.GAME_DRAW_ACCEPT:
+          case EventType.GAME_DRAW_DECLINE:
+          case EventType.GAME_RESIGN:
+            setDrawOffer(null);
+            setNotice({
+              event: message.type,
+              userId: message.data.userId,
+              id: ++eventSeq.current,
+            });
+            break;
+
           case EventType.GAME_ERROR:
-            setError({ message: message.data.message, id: ++errorSeq.current });
+            setError({ message: message.data.message, id: ++eventSeq.current });
             break;
 
           default:
@@ -155,7 +205,13 @@ export function useGameSocket({
       };
 
       socket.onclose = (event) => {
-        socketRef.current = null;
+        // Only if this socket is still the current one. A close event is
+        // asynchronous, so a socket torn down by an effect re-run — React's
+        // development double-mount, or the server's 4000 takeover that the
+        // re-run provokes — lands after its replacement has already claimed
+        // the ref, and clearing it unconditionally strands a live connection
+        // that `send` then refuses to use.
+        if (socketRef.current === socket) socketRef.current = null;
 
         if (disposed) return;
 
@@ -165,7 +221,7 @@ export function useGameSocket({
           setStatus("closed");
           setError({
             message: "This game was opened in another tab.",
-            id: ++errorSeq.current,
+            id: ++eventSeq.current,
           });
           return;
         }
@@ -185,7 +241,8 @@ export function useGameSocket({
 
       // 1000 keeps this out of the reconnect path on the way out.
       socket?.close(1000);
-      socketRef.current = null;
+
+      if (socketRef.current === socket) socketRef.current = null;
     };
   }, [gameId, enabled]);
 
@@ -198,5 +255,5 @@ export function useGameSocket({
     return true;
   }, []);
 
-  return { state, status, error, send };
+  return { state, status, error, notice, drawOffer, lastMove, send };
 }

@@ -2,6 +2,13 @@
 
 import { getCheckedSquare, getLegalMoves, isPromotion } from "@repo/game-core";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  colourOf,
+  squareIndex,
+  squareName,
+  toSquares,
+  type Orientation,
+} from "@/lib/board";
 import { cn } from "@/lib/utils";
 
 /*
@@ -29,47 +36,7 @@ const PIECE_NAMES: Record<string, string> = {
 
 const PROMOTION_CHOICES = ["q", "r", "b", "n"];
 
-const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
-
-type Orientation = "white" | "black";
-
 export type MoveIntent = { from: string; to: string; promotion?: string };
-
-/** Expands the FEN placement field into 64 squares, rank 8 first. */
-function toSquares(fen: string): (string | null)[] {
-  const placement = fen.split(" ")[0] ?? "";
-
-  return placement
-    .split("/")
-    .flatMap((rank) =>
-      [...rank].flatMap((char) =>
-        /\d/.test(char) ? Array<null>(Number(char)).fill(null) : [char],
-      ),
-    );
-}
-
-function colourOf(piece: string): Orientation {
-  return piece === piece.toUpperCase() ? "white" : "black";
-}
-
-/** Board-order index (0 = top-left as drawn) to algebraic name, and back. */
-function squareName(index: number, orientation: Orientation): string {
-  const rank = Math.floor(index / 8);
-  const file = index % 8;
-
-  return orientation === "black"
-    ? `${FILES[7 - file]}${rank + 1}`
-    : `${FILES[file]}${8 - rank}`;
-}
-
-function squareIndex(square: string, orientation: Orientation): number {
-  const file = FILES.indexOf(square.slice(0, 1));
-  const rank = Number(square.slice(1));
-
-  return orientation === "black"
-    ? (rank - 1) * 8 + (7 - file)
-    : (8 - rank) * 8 + file;
-}
 
 function describe(square: string, piece: string | null): string {
   if (!piece) return `${square}, empty`;
@@ -155,13 +122,16 @@ export function Board({
 
     if (step === undefined) return;
 
+    // Claimed as soon as it is recognised: an arrow at the edge must not fall
+    // through and scroll the page instead.
+    event.preventDefault();
+
     const next = index + step;
     const sameRank = Math.floor(next / 8) === Math.floor(index / 8);
 
     if (next < 0 || next > 63) return;
     if (Math.abs(step) === 1 && !sameRank) return;
 
-    event.preventDefault();
     setCursor(next);
     cells.current[next]?.focus();
   }

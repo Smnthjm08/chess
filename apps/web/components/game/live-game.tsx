@@ -1,15 +1,18 @@
 "use client";
 
 import {
+  type ClientMessage,
   createEngine,
   EventType,
   getActiveTurn,
   tryMove,
 } from "@repo/game-core";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Board, type MoveIntent } from "@/components/game/board";
+import { GameControls, type GameAction } from "@/components/game/game-controls";
+import { GameResultDialog } from "@/components/game/game-result";
 import { GameSeat } from "@/components/game/game-seat";
 import { StatusBadge } from "@/components/game/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,15 +25,16 @@ import {
   type GameStatus,
   type Move,
 } from "@/lib/api";
+import {
+  clockAt,
+  clockUrgency,
+  formatClock,
+  useClock,
+  type ClockBaseline,
+} from "@/lib/clock";
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
-
-function formatClock(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
+import { resultSummary } from "@/lib/result";
+import { cn } from "@/lib/utils";
 
 /** Pairs the flat move list into numbered white/black rows. */
 function toRows(moves: Move[]) {
@@ -47,17 +51,22 @@ function toRows(moves: Move[]) {
   return rows;
 }
 
-const RESULT_TEXT: Record<GameResult, string> = {
-  CHECKMATE: "Checkmate",
-  RESIGNATION: "Resignation",
-  TIMEOUT: "Out of time",
-  STALEMATE: "Stalemate",
-  THREEFOLD_REPETITION: "Threefold repetition",
-  INSUFFICIENT_MATERIAL: "Insufficient material",
-  FIFTY_MOVE_RULE: "Fifty-move rule",
-  DRAW_AGREED: "Draw agreed",
-  ABANDONED: "Abandoned",
-};
+function actionMessage(action: GameAction, gameId: string): ClientMessage {
+  switch (action) {
+    case "resign":
+      return { type: EventType.GAME_RESIGN, gameId };
+    case "draw:offer":
+      return { type: EventType.GAME_DRAW_OFFER, gameId };
+    case "draw:accept":
+      return { type: EventType.GAME_DRAW_ACCEPT, gameId };
+    case "draw:decline":
+      return { type: EventType.GAME_DRAW_DECLINE, gameId };
+    case "pause":
+      return { type: EventType.GAME_PAUSE, gameId };
+    case "resume":
+      return { type: EventType.GAME_RESUME, gameId };
+  }
+}
 
 function ConnectionNote({ status }: { status: ConnectionStatus }) {
   if (status === "open" || status === "idle") return null;
@@ -71,16 +80,24 @@ function ConnectionNote({ status }: { status: ConnectionStatus }) {
   );
 }
 
+const URGENCY_CLASS = {
+  urgent: "text-destructive",
+  low: "text-warning",
+  normal: "",
+} as const;
+
 function PlayerRow({
   label,
   name,
   clock,
   onMove,
+  live,
 }: {
   label: string;
   name: string;
   clock: number;
   onMove: boolean;
+  live: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -91,11 +108,11 @@ function PlayerRow({
         <p className="text-sm font-medium">{name}</p>
       </div>
       <span
-        className={
-          onMove
-            ? "font-mono text-lg tabular-nums"
-            : "text-muted-foreground font-mono text-lg tabular-nums"
-        }
+        className={cn(
+          "font-mono text-lg tabular-nums",
+          onMove ? "" : "text-muted-foreground",
+          live && URGENCY_CLASS[clockUrgency(clock)],
+        )}
       >
         {formatClock(clock)}
       </span>
@@ -114,17 +131,30 @@ export function LiveGame({
 
   const onSync = useCallback(() => router.refresh(), [router]);
 
-  const { state, status, error, send } = useGameSocket({
+  const {
+    state,
+    status,
+    error,
+    notice,
+    drawOffer,
+    lastMove: playedMove,
+    send,
+  } = useGameSocket({
     gameId: initialGame.id,
     // The upgrade needs a session; a signed-out visitor reads the static page.
     enabled: Boolean(viewerId),
     onSync,
   });
 
+  const role = state?.role ?? "spectator";
+
   const [optimistic, setOptimistic] = useState<{
     fen: string;
     from: string;
     to: string;
+    whiteTimeMs: number;
+    blackTimeMs: number;
+    anchor: number;
   } | null>(null);
 
   // Every `game:state` is authoritative — the local position only ever stands
@@ -142,6 +172,55 @@ export function LiveGame({
     toast.error(error.message);
   }, [error]);
 
+  // A resignation or an accepted draw ends the game before the `game:state`
+  // carrying FINISHED lands, and the board must not stay playable in between.
+  const [ended, setEnded] = useState(false);
+
+  useEffect(() => {
+    if (!notice) return;
+
+    // These are broadcast to the whole room, spectators included, and every
+    // second-person phrasing below is a lie to anyone who is not playing.
+    const playing = role === "white" || role === "black";
+    const mine = notice.userId === viewerId;
+
+    switch (notice.event) {
+      case EventType.GAME_RESIGN:
+        setEnded(true);
+        toast(
+          !playing
+            ? "The game ended by resignation."
+            : mine
+              ? "You resigned."
+              : "Your opponent resigned.",
+        );
+        break;
+
+      case EventType.GAME_DRAW_ACCEPT:
+        setEnded(true);
+        toast(
+          !playing
+            ? "The players agreed a draw."
+            : mine
+              ? "You accepted the draw."
+              : "Your draw offer was accepted.",
+        );
+        break;
+
+      // A declined offer is between the two players; a spectator has no
+      // standing offer of their own to hear about.
+      case EventType.GAME_DRAW_DECLINE:
+        if (!playing) break;
+
+        toast(
+          mine
+            ? "You declined the draw offer."
+            : "Your draw offer was declined.",
+        );
+        break;
+    }
+  }, [notice, viewerId, role]);
+
   // `game:state` is authoritative for everything it carries. Player names are
   // not among them, so those stay on the server-rendered game until a refresh.
   const game = state
@@ -154,6 +233,7 @@ export function LiveGame({
         blackId: state.blackId,
         whiteTimeMs: state.whiteTimeMs,
         blackTimeMs: state.blackTimeMs,
+        winnerId: state.winnerId,
       }
     : initialGame;
 
@@ -162,12 +242,56 @@ export function LiveGame({
   // Read off the displayed position rather than `state.turn`, so an optimistic
   // move hands the move over immediately and the board locks behind it.
   const turn = getActiveTurn(fen);
-  const live = game.status === "ACTIVE";
+  const live = game.status === "ACTIVE" && !ended;
   const rows = toRows(initialGame.moves);
 
-  const played = initialGame.moves.at(-1);
+  const finished = game.status === "FINISHED";
+
+  // Only announce a result the viewer watched arrive. Opening a game that was
+  // already over is a review, and a modal over it is just in the way.
+  const finishedOnArrival = useRef(initialGame.status === "FINISHED");
+  const [resultSeen, setResultSeen] = useState(false);
+
+  // `playedMove` arrives with the broadcast; the move list is refetched, so
+  // falling back to it only matters before the first socket move lands.
+  const persisted = initialGame.moves.at(-1);
   const lastMove =
-    optimistic ?? (played ? { from: played.from, to: played.to } : null);
+    optimistic ??
+    playedMove ??
+    (persisted ? { from: persisted.from, to: persisted.to } : null);
+
+  // Anchored on the values themselves rather than the message, so a state that
+  // repeats the clock keeps counting from its first reading instead of quietly
+  // handing back the milliseconds already spent.
+  const authoritative = useMemo<ClockBaseline>(
+    () => ({
+      whiteTimeMs: game.whiteTimeMs,
+      blackTimeMs: game.blackTimeMs,
+      turn: getActiveTurn(game.fen),
+      running: game.status === "ACTIVE",
+      anchor: Date.now(),
+    }),
+    [game.whiteTimeMs, game.blackTimeMs, game.fen, game.status],
+  );
+
+  // An optimistic move presses the clock locally too — otherwise the mover's
+  // display jumps back up to its last authoritative reading for the length of
+  // the round trip.
+  const baseline = useMemo<ClockBaseline>(
+    () =>
+      optimistic
+        ? {
+            whiteTimeMs: optimistic.whiteTimeMs,
+            blackTimeMs: optimistic.blackTimeMs,
+            turn: getActiveTurn(optimistic.fen),
+            running: authoritative.running,
+            anchor: optimistic.anchor,
+          }
+        : authoritative,
+    [optimistic, authoritative],
+  );
+
+  const clock = useClock(baseline);
 
   const handleMove = useCallback(
     (move: MoveIntent) => {
@@ -188,9 +312,26 @@ export function LiveGame({
         return;
       }
 
-      setOptimistic({ fen: result.fen, from: result.from, to: result.to });
+      const at = Date.now();
+
+      setOptimistic({
+        fen: result.fen,
+        from: result.from,
+        to: result.to,
+        ...clockAt(baseline, at),
+        anchor: at,
+      });
     },
-    [fen, send, initialGame.id],
+    [fen, send, initialGame.id, baseline],
+  );
+
+  const handleAction = useCallback(
+    (action: GameAction) => {
+      if (!send(actionMessage(action, initialGame.id))) {
+        toast.error("Not connected — try again in a moment.");
+      }
+    },
+    [send, initialGame.id],
   );
 
   return (
@@ -217,26 +358,38 @@ export function LiveGame({
             <PlayerRow
               label="Black"
               name={playerLabel(game.black)}
-              clock={game.blackTimeMs}
+              clock={clock.blackTimeMs}
               onMove={live && turn === "black"}
+              live={live}
             />
             <Separator />
             <PlayerRow
               label="White"
               name={playerLabel(game.white)}
-              clock={game.whiteTimeMs}
+              clock={clock.whiteTimeMs}
               onMove={live && turn === "white"}
+              live={live}
             />
 
             {game.result && (
               <p className="text-muted-foreground text-sm">
-                {RESULT_TEXT[game.result]}
+                {resultSummary(game)}
               </p>
             )}
 
             <ConnectionNote status={status} />
           </CardContent>
         </Card>
+
+        <GameControls
+          role={role}
+          turn={turn}
+          status={ended ? "FINISHED" : game.status}
+          drawOffer={drawOffer}
+          viewerId={viewerId}
+          connected={status === "open"}
+          onAction={handleAction}
+        />
 
         <Card>
           <CardHeader>
@@ -265,6 +418,15 @@ export function LiveGame({
           </CardContent>
         </Card>
       </aside>
+
+      <GameResultDialog
+        game={game}
+        viewerId={viewerId}
+        open={finished && !finishedOnArrival.current && !resultSeen}
+        onOpenChange={(next: boolean) => {
+          if (!next) setResultSeen(true);
+        }}
+      />
     </main>
   );
 }
