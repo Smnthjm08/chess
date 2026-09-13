@@ -39,7 +39,7 @@ export type SocketNotice = {
 };
 
 export type ConnectionStatus =
-  "idle" | "connecting" | "open" | "reconnecting" | "closed";
+  "connecting" | "open" | "reconnecting" | "closed";
 
 /**
  * The server puts a dropped player on a fixed 60s abandonment clock
@@ -61,15 +61,16 @@ const REPLACED_BY_NEW_CONNECTION = 4000;
 
 export function useGameSocket({
   gameId,
-  enabled = true,
+  viewerId,
   onSync,
 }: {
   gameId: string;
   /**
-   * The upgrade is authenticated, so a signed-out visitor would only retry
-   * against a 401 forever. They read the server-rendered page instead.
+   * The session is fixed at the upgrade, so signing in — taking a seat as a
+   * guest, say — needs a fresh socket. Signed out, the server lets the socket
+   * watch but not act.
    */
-  enabled?: boolean;
+  viewerId: string | null;
   /**
    * Fired when something arrived that `game:state` alone cannot express —
    * a move (the SAN list lives in the database) or a seat changing hands
@@ -77,9 +78,7 @@ export function useGameSocket({
    */
   onSync?: () => void;
 }) {
-  const [status, setStatus] = useState<ConnectionStatus>(
-    enabled ? "connecting" : "idle",
-  );
+  const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [state, setState] = useState<GameState | null>(null);
   const [error, setError] = useState<SocketError | null>(null);
   const [notice, setNotice] = useState<SocketNotice | null>(null);
@@ -105,11 +104,6 @@ export function useGameSocket({
   });
 
   useEffect(() => {
-    if (!enabled) {
-      setStatus("idle");
-      return;
-    }
-
     let disposed = false;
     let socket: WebSocket | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
@@ -272,7 +266,7 @@ export function useGameSocket({
 
       if (socketRef.current === socket) socketRef.current = null;
     };
-  }, [gameId, enabled]);
+  }, [gameId, viewerId]);
 
   const send = useCallback((message: ClientMessage) => {
     const socket = socketRef.current;

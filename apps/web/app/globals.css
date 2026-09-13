@@ -30,8 +30,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-piece-light: var(--piece-light);
-  --color-piece-dark: var(--piece-dark);
+  --color-board-light: var(--board-light);
+  --color-board-dark: var(--board-dark);
+  --color-board-hint: var(--board-hint);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -151,11 +152,13 @@
   --warning: oklch(0.666 0.145 70.08); /* #cb8100 */
   --info: oklch(0.546 0.215 259.81); /* #0866ea */
 
-  /* board pieces — not theme-derived: the armies stay white and black in
-     both palettes, and each is stroked with the other so a piece reads on a
-     square of its own tone. */
-  --piece-light: oklch(1 0 0); /* #ffffff */
-  --piece-dark: oklch(0.1448 0 0); /* #0a0a0a */
+  /* board squares — the black pieces are black-on-black-outline, so neither
+     square may get anywhere near the canvas. */
+  --board-light: var(--surface-elevated);
+  --board-dark: var(--surface-card);
+  /* legal-move hints — not theme-derived: every square is mid-tone or lighter
+     in both palettes, so a dark tint reads on all of them. */
+  --board-hint: oklch(0.1448 0 0 / 0.3);
 
   /* semantic mapping */
   --background: var(--canvas);
@@ -216,6 +219,9 @@
   --warning: oklch(0.7686 0.1647 70.08); /* #f59e0b */
   --info: oklch(0.6231 0.188 259.81); /* #3b82f6 */
 
+  --board-light: oklch(0.72 0 0); /* #a3a3a3 */
+  --board-dark: oklch(0.56 0 0); /* #747474 */
+
   /* semantic mapping */
   --background: var(--canvas);
   --foreground: oklch(1 0 0); /* #ffffff */
@@ -268,24 +274,5 @@
   h3,
   h4 {
     @apply text-foreground;
-  }
-}
-
-@layer components {
-  /*
-   * `paint-order` keeps the stroke behind the fill so it rims the glyph
-   * instead of eating into it; the em width tracks the board's fluid size.
-   */
-  .piece {
-    paint-order: stroke fill;
-    -webkit-text-stroke: 0.028em var(--piece-dark);
-  }
-  .piece-white {
-    color: var(--piece-light);
-    -webkit-text-stroke-color: var(--piece-dark);
-  }
-  .piece-black {
-    color: var(--piece-dark);
-    -webkit-text-stroke-color: var(--piece-light);
   }
 }

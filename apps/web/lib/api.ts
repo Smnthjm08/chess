@@ -1,3 +1,4 @@
+import type { TimeControlKey } from "@repo/game-core";
 import { serverUrl } from "./env";
 
 export type GameStatus = "WAITING" | "ACTIVE" | "PAUSED" | "FINISHED";
@@ -53,6 +54,8 @@ export type Game = {
   status: GameStatus;
   fen: string;
   result: GameResult | null;
+  initialTimeMs: number;
+  incrementMs: number;
   whiteTimeMs: number;
   blackTimeMs: number;
   lastMoveAt: string | null;
@@ -166,13 +169,14 @@ async function request<T>(
 }
 
 export async function listGames(params?: {
-  status?: GameStatus;
+  /** Several are sent as one comma-separated `status`; empty means no filter. */
+  status?: GameStatus[];
   page?: number;
   limit?: number;
 }) {
   const query = new URLSearchParams();
 
-  if (params?.status) query.set("status", params.status);
+  if (params?.status?.length) query.set("status", params.status.join(","));
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
 
@@ -185,8 +189,11 @@ export async function getGame(gameId: string) {
   return request<GameDetail>(`/games/${gameId}`);
 }
 
-export async function createGame() {
-  return request<Game>("/games", { method: "POST" });
+export async function createGame(timeControl?: TimeControlKey) {
+  return request<Game>("/games", {
+    method: "POST",
+    body: JSON.stringify(timeControl ? { timeControl } : {}),
+  });
 }
 
 export async function joinGame(gameId: string) {

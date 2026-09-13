@@ -21,6 +21,13 @@ export function colourOf(piece: string): Orientation {
   return piece === piece.toUpperCase() ? "white" : "black";
 }
 
+/** A FEN piece letter to its SVG under `public/`. */
+export function pieceAsset(piece: string): string {
+  const side = colourOf(piece) === "white" ? "w" : "b";
+
+  return `/pieces/cburnett/${side}${piece.toUpperCase()}.svg`;
+}
+
 /** Board-order index (0 = top-left as drawn) to algebraic name. */
 export function squareName(index: number, orientation: Orientation): string {
   const rank = Math.floor(index / 8);

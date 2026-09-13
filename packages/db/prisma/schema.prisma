@@ -111,6 +111,11 @@ model Game {
 
   result GameResult?
 
+  // The control the game was created with; `whiteTimeMs`/`blackTimeMs` are
+  // what is left on each clock. Defaults match `DEFAULT_TIME_CONTROL` (5+0).
+  initialTimeMs Int @default(300000)
+  incrementMs   Int @default(0)
+
   whiteTimeMs Int @default(300000)
   blackTimeMs Int @default(300000)
   lastMoveAt  DateTime?
