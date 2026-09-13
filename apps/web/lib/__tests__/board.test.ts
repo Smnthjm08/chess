@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { START_FEN } from "@repo/game-core";
 import {
   colourOf,
+  pieceAsset,
   squareIndex,
   squareName,
   toSquares,
@@ -46,6 +49,21 @@ describe("colourOf", () => {
   test("uppercase is white, lowercase is black", () => {
     expect(colourOf("K")).toBe("white");
     expect(colourOf("p")).toBe("black");
+  });
+});
+
+describe("pieceAsset", () => {
+  test("maps FEN letters onto the side-prefixed file names", () => {
+    expect(pieceAsset("K")).toBe("/pieces/cburnett/wK.svg");
+    expect(pieceAsset("n")).toBe("/pieces/cburnett/bN.svg");
+  });
+
+  test("every piece has an SVG on disk", () => {
+    const publicDir = join(import.meta.dir, "../../public");
+
+    for (const piece of "KQRBNPkqrbnp") {
+      expect(existsSync(join(publicDir, pieceAsset(piece)))).toBe(true);
+    }
   });
 });
 

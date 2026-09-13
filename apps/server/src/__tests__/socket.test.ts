@@ -66,8 +66,57 @@ describe("joining", () => {
     [w, b, s].forEach((client) => client.close());
   });
 
-  test("an unauthenticated upgrade is refused", async () => {
-    const socket = new WebSocket(server.wsUrl);
+  test("a signed-out socket watches the game live", async () => {
+    const { gameId, w, b } = await seatedGame(server);
+    const s = await TestClient.connect(server);
+
+    s.send({ type: "game:join", gameId });
+    const joined = await s.next("game:state");
+
+    expect(joined.data?.role).toBe("spectator");
+
+    // A spectator arriving is not a seat changing hands.
+    await w.never("game:join");
+
+    w.send({ type: "game:move", gameId, data: { from: "e2", to: "e4" } });
+    const moved = await s.next("game:state");
+
+    expect(moved.data?.turn).toBe("black");
+
+    [w, b, s].forEach((client) => client.close());
+  });
+
+  test("a signed-out socket cannot act", async () => {
+    const { gameId, w, b } = await seatedGame(server);
+    const s = await TestClient.connect(server);
+
+    s.send({ type: "game:join", gameId });
+    await s.next("game:state");
+
+    for (const type of ["game:resign", "game:draw:offer", "game:pause"]) {
+      s.send({ type, gameId });
+      const error = await s.next("game:error");
+
+      expect(error.data?.message).toBe("Unauthorized socket session");
+    }
+
+    s.send({ type: "game:move", gameId, data: { from: "e2", to: "e4" } });
+    expect((await s.next("game:error")).data?.message).toBe(
+      "Unauthorized socket session",
+    );
+
+    const stored = await prisma.game.findUniqueOrThrow({
+      where: { id: gameId },
+    });
+
+    expect(stored.status).toBe("ACTIVE");
+    expect(await prisma.move.count({ where: { gameId } })).toBe(0);
+
+    [w, b, s].forEach((client) => client.close());
+  });
+
+  test("an invalid ticket is still refused", async () => {
+    const socket = new WebSocket(`${server.wsUrl}/?ticket=not-a-ticket`);
     const code = await new Promise<number>((resolve) => {
       socket.addEventListener("close", (event) => resolve(event.code));
       socket.addEventListener("error", () => resolve(-1));
@@ -201,6 +250,24 @@ describe("validation", () => {
     const error = await w.next("game:error");
 
     expect(String(error.data?.message)).toContain("Invalid message");
+
+    [w, b].forEach((client) => client.close());
+  });
+
+  test.each([
+    { from: "e9", to: "e4" },
+    { from: "E2", to: "E4" },
+    { from: "e2", to: "e4 " },
+    { from: "e7", to: "e8", promotion: "k" },
+    { from: "e7", to: "e8", promotion: "Q" },
+  ])("an out-of-range move is rejected: %o", async (data) => {
+    const { gameId, w, b } = await seatedGame(server);
+
+    w.send({ type: "game:move", gameId, data });
+    const error = await w.next("game:error");
+
+    expect(String(error.data?.message)).toContain("Invalid message");
+    await b.never("game:state");
 
     [w, b].forEach((client) => client.close());
   });

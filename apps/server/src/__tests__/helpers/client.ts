@@ -40,10 +40,14 @@ export function api(server: TestServer, guest?: Guest) {
     });
 }
 
-export async function createGame(server: TestServer, guest: Guest) {
+export async function createGame(
+  server: TestServer,
+  guest: Guest,
+  timeControl?: string,
+) {
   const res = await api(server, guest)("/api/v1/games", {
     method: "POST",
-    body: "{}",
+    body: JSON.stringify(timeControl ? { timeControl } : {}),
   });
   const body = (await res.json()) as { data: { id: string } };
 
@@ -76,9 +80,10 @@ export class TestClient {
     });
   }
 
-  static async connect(server: TestServer, guest: Guest): Promise<TestClient> {
+  /** Without a guest, the socket connects signed out, as a spectator. */
+  static async connect(server: TestServer, guest?: Guest): Promise<TestClient> {
     const socket = new WebSocket(server.wsUrl, {
-      headers: { cookie: guest.cookie, origin: ORIGIN },
+      headers: { ...(guest ? { cookie: guest.cookie } : {}), origin: ORIGIN },
     } as unknown as string[]);
 
     await new Promise<void>((resolve, reject) => {
@@ -133,10 +138,10 @@ export class TestClient {
 }
 
 /** Two seated players on a started game, each with an open socket. */
-export async function seatedGame(server: TestServer) {
+export async function seatedGame(server: TestServer, timeControl?: string) {
   const white = await signInAsGuest(server);
   const black = await signInAsGuest(server);
-  const gameId = await createGame(server, white);
+  const gameId = await createGame(server, white, timeControl);
 
   await joinGame(server, black, gameId);
 
