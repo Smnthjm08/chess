@@ -1,4 +1,10 @@
-import { START_FEN, getActiveTurn } from "@repo/game-core";
+import {
+  DEFAULT_TIME_CONTROL,
+  START_FEN,
+  TIME_CONTROLS,
+  getActiveTurn,
+  isTimeControlKey,
+} from "@repo/game-core";
 import type { Request, Response } from "express";
 import { type Game, GameStatus, prisma } from "@repo/db";
 import { scheduleClockExpiry } from "../sockets/clock-expiry";
@@ -35,11 +41,31 @@ export const createGame = async (req: Request, res: Response) => {
       });
     }
 
+    const { timeControl = DEFAULT_TIME_CONTROL } = (req.body ?? {}) as {
+      timeControl?: unknown;
+    };
+
+    if (!isTimeControlKey(timeControl)) {
+      return res.status(400).json({
+        success: false,
+        error: `Unknown time control: ${String(timeControl)}`,
+        data: { allowed: Object.keys(TIME_CONTROLS) },
+        message: "Invalid time control",
+      });
+    }
+
+    const { initialMs, incrementMs } = TIME_CONTROLS[timeControl];
+
     const game = await prisma.game.create({
       data: {
         whiteId: userId,
         status: GameStatus.WAITING,
         fen: START_FEN,
+        initialTimeMs: initialMs,
+        incrementMs,
+        // Both clocks start on the chosen control rather than the default.
+        whiteTimeMs: initialMs,
+        blackTimeMs: initialMs,
       },
     });
 
@@ -217,11 +243,17 @@ export const getGames = async (req: Request, res: Response) => {
   try {
     const { status, page, limit } = req.query;
 
-    const validStatus =
-      typeof status === "string" &&
-      Object.values(GameStatus).includes(status as GameStatus)
-        ? (status as GameStatus)
-        : undefined;
+    // Comma-separated so a lobby tab can mean more than one status — "in
+    // progress" is ACTIVE and PAUSED. Unrecognised names are dropped, and a
+    // filter that names nothing valid falls back to no filter at all.
+    const validStatuses = (typeof status === "string" ? status.split(",") : [])
+      .map((value) => value.trim())
+      .filter((value): value is GameStatus =>
+        Object.values(GameStatus).includes(value as GameStatus),
+      );
+
+    const where =
+      validStatuses.length > 0 ? { status: { in: validStatuses } } : undefined;
 
     const pageNumber = Math.max(
       1,
@@ -237,12 +269,10 @@ export const getGames = async (req: Request, res: Response) => {
 
     const skip = (pageNumber - 1) * pageSize;
 
-    const totalGames = await prisma.game.count({
-      where: validStatus ? { status: validStatus } : undefined,
-    });
+    const totalGames = await prisma.game.count({ where });
 
     const games = await prisma.game.findMany({
-      where: validStatus ? { status: validStatus } : undefined,
+      where,
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,

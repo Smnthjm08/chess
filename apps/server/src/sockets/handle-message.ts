@@ -56,7 +56,6 @@ async function loadGameForSocket(
 /** The position moved under us between the read and the write. */
 class StalePositionError extends Error {}
 
-
 /**
  * A game a player can still resign or agree a draw in. Unlike a move, neither
  * needs the clock to be running, so a paused game qualifies.
@@ -131,27 +130,22 @@ export async function handleMessage(socket: WebSocket, raw: RawData) {
 async function dispatch(socket: WebSocket, message: ClientMessage) {
   switch (message.type) {
     case EventType.GAME_JOIN: {
+      // Absent for a signed-out spectator, who only ever receives the state.
       const userId = gameSocketManager.getUserId(socket);
 
-      if (!userId) {
-        sendMessage(socket, {
-          type: EventType.GAME_ERROR,
-          data: { message: "Unauthorized socket session" },
+      if (userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
         });
-        return;
-      }
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true },
-      });
-
-      if (!user) {
-        sendMessage(socket, {
-          type: EventType.GAME_ERROR,
-          data: { message: "Unknown user" },
-        });
-        return;
+        if (!user) {
+          sendMessage(socket, {
+            type: EventType.GAME_ERROR,
+            data: { message: "Unknown user" },
+          });
+          return;
+        }
       }
 
       const game = await prisma.game.findUnique({
@@ -166,13 +160,15 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         return;
       }
 
-      const otherActiveGame = await prisma.game.findFirst({
-        where: {
-          status: GameStatus.ACTIVE,
-          id: { not: message.gameId },
-          OR: [{ whiteId: userId }, { blackId: userId }],
-        },
-      });
+      const otherActiveGame =
+        userId &&
+        (await prisma.game.findFirst({
+          where: {
+            status: GameStatus.ACTIVE,
+            id: { not: message.gameId },
+            OR: [{ whiteId: userId }, { blackId: userId }],
+          },
+        }));
 
       if (otherActiveGame) {
         sendMessage(socket, {
@@ -183,7 +179,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
       }
 
       gameSocketManager.joinRoom(message.gameId, socket);
-      cancelAbandonment(message.gameId, userId);
+      if (userId) cancelAbandonment(message.gameId, userId);
 
       const activeTurn = getActiveTurn(game.fen);
 
@@ -211,15 +207,17 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         winnerId: game.winnerId,
       });
 
-      gameSocketManager.broadcast(
-        message.gameId,
-        {
-          type: EventType.GAME_JOIN,
-          gameId: message.gameId,
-          data: { userId },
-        },
-        socket,
-      );
+      if (userId) {
+        gameSocketManager.broadcast(
+          message.gameId,
+          {
+            type: EventType.GAME_JOIN,
+            gameId: message.gameId,
+            data: { userId },
+          },
+          socket,
+        );
+      }
       break;
     }
 
@@ -284,11 +282,17 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         return;
       }
 
+      // Fischer increment: the mover's elapsed time is banked by the reconcile
+      // above, then their increment is added back. The idle side is untouched.
       const activeClock = {
         whiteTimeMs:
-          activeTurn === "white" ? clockState.whiteTimeMs : game.whiteTimeMs,
+          activeTurn === "white"
+            ? clockState.whiteTimeMs + game.incrementMs
+            : game.whiteTimeMs,
         blackTimeMs:
-          activeTurn === "black" ? clockState.blackTimeMs : game.blackTimeMs,
+          activeTurn === "black"
+            ? clockState.blackTimeMs + game.incrementMs
+            : game.blackTimeMs,
       };
 
       const engine = gameEngineCache.getOrHydrate(message.gameId, game.fen);
@@ -858,7 +862,11 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         return;
       }
 
-      const rematch = await createRematch(players);
+      const rematch = await createRematch({
+        ...players,
+        initialTimeMs: game.initialTimeMs,
+        incrementMs: game.incrementMs,
+      });
 
       rematchOfferStore.clear(message.gameId);
 

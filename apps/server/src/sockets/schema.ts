@@ -7,6 +7,8 @@ const gameIdOnly = <T extends ClientMessage["type"]>(type: T) =>
     gameId: z.string().min(1),
   });
 
+const square = z.string().regex(/^[a-h][1-8]$/);
+
 export const clientMessageSchema: z.ZodType<ClientMessage> =
   z.discriminatedUnion("type", [
     gameIdOnly(EventType.GAME_JOIN),
@@ -15,9 +17,9 @@ export const clientMessageSchema: z.ZodType<ClientMessage> =
       type: z.literal(EventType.GAME_MOVE),
       gameId: z.string().min(1),
       data: z.object({
-        from: z.string().min(2).max(2),
-        to: z.string().min(2).max(2),
-        promotion: z.string().optional(),
+        from: square,
+        to: square,
+        promotion: z.enum(["q", "r", "b", "n"]).optional(),
       }),
     }),
     gameIdOnly(EventType.GAME_PAUSE),

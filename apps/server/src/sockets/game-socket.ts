@@ -4,7 +4,8 @@ import { sendMessage } from "./send";
 import { drawOfferStore } from "./draw-offer-store";
 import { rematchOfferStore } from "./rematch-offer-store";
 
-type Session = { userId: string; gameId: string };
+/** `userId` is null for a signed-out spectator, who can watch but not act. */
+type Session = { userId: string | null; gameId: string };
 // `role` is per-recipient and the two offers are per-game rather than
 // per-event, so `sendGameState` resolves all three and no call site passes them.
 type GameStateData = Omit<
@@ -13,12 +14,12 @@ type GameStateData = Omit<
 >;
 
 function getRole(
-  userId: string,
+  userId: string | null,
   whiteId: string | null,
   blackId: string | null,
 ): GameRole {
-  if (userId === whiteId) return "white";
-  if (userId === blackId) return "black";
+  if (userId && userId === whiteId) return "white";
+  if (userId && userId === blackId) return "black";
   return "spectator";
 }
 
@@ -28,7 +29,7 @@ export class GameSocketManager {
   private readonly userSockets = new Map<string, WebSocket>();
 
   getUserId(socket: WebSocket): string | undefined {
-    return this.sessions.get(socket)?.userId;
+    return this.sessions.get(socket)?.userId ?? undefined;
   }
 
   getSocketByUserId(userId: string): WebSocket | undefined {
@@ -67,11 +68,15 @@ export class GameSocketManager {
     this.userSockets.set(userId, socket);
   }
 
+  setSpectator(socket: WebSocket) {
+    this.sessions.set(socket, { userId: null, gameId: "" });
+  }
+
   joinRoom(gameId: string, socket: WebSocket) {
     const session = this.sessions.get(socket);
 
-    if (!session?.userId) {
-      throw new Error("Socket must be authenticated before joining a room");
+    if (!session) {
+      throw new Error("Socket must be registered before joining a room");
     }
 
     const userId = session.userId;
