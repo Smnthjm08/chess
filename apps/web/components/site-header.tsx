@@ -44,8 +44,10 @@ function AccountMenu() {
   if (!user) {
     return (
       <div className="flex items-center gap-2">
+        {/* The create-account dialog has a sign-in tab, so a phone header
+            can drop this one. */}
         <AuthDialog defaultMode="signin">
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" className="max-sm:hidden">
             Sign in
           </Button>
         </AuthDialog>
@@ -171,7 +173,7 @@ function AccountMenu() {
 export function SiteHeader() {
   return (
     <header className="border-hairline border-b">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
         <Link href="/" className="text-title-sm font-semibold tracking-tight">
           Chess
         </Link>

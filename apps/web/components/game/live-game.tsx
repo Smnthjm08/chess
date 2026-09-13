@@ -4,6 +4,7 @@ import {
   type ClientMessage,
   createEngine,
   EventType,
+  formatTimeControl,
   getActiveTurn,
   tryMove,
 } from "@repo/game-core";
@@ -75,7 +76,7 @@ function actionMessage(action: GameAction, gameId: string): ClientMessage {
 }
 
 function ConnectionNote({ status }: { status: ConnectionStatus }) {
-  if (status === "open" || status === "idle") return null;
+  if (status === "open") return null;
 
   return (
     <p className="text-muted-foreground text-xs">
@@ -126,6 +127,37 @@ function PlayerRow({
   );
 }
 
+/** One scrolling line of moves, pinned to the latest. */
+function MoveStrip({ rows }: { rows: ReturnType<typeof toRows> }) {
+  const strip = useRef<HTMLOListElement>(null);
+  // Keyed on the ply count, not `rows`: the clock re-renders ten times a second
+  // and would snap the strip back while the player scrolls through it.
+  const plies = rows.length * 2 - (rows.at(-1)?.black ? 0 : 1);
+
+  useEffect(() => {
+    const node = strip.current;
+    if (node) node.scrollLeft = node.scrollWidth;
+  }, [plies]);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <ol
+      ref={strip}
+      aria-label="Moves"
+      className="flex gap-3 overflow-x-auto font-mono text-sm whitespace-nowrap scrollbar-none"
+    >
+      {rows.map((row) => (
+        <li key={row.number} className="flex gap-1.5">
+          <span className="text-muted-foreground">{row.number}.</span>
+          <span>{row.white}</span>
+          {row.black && <span>{row.black}</span>}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function LiveGame({
   initialGame,
   viewerId,
@@ -149,8 +181,7 @@ export function LiveGame({
     send,
   } = useGameSocket({
     gameId: initialGame.id,
-    // The upgrade needs a session; a signed-out visitor reads the static page.
-    enabled: Boolean(viewerId),
+    viewerId,
     onSync,
   });
 
@@ -360,42 +391,66 @@ export function LiveGame({
     [send, initialGame.id],
   );
 
-  return (
-    <main className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Board
-        fen={fen}
-        orientation={orientation}
-        selectable={
-          state?.role === turn && live && status === "open" && !optimistic
-        }
-        lastMove={lastMove}
-        onMove={handleMove}
-      />
+  const playerRow = (side: "white" | "black") => (
+    <PlayerRow
+      label={side === "white" ? "White" : "Black"}
+      name={playerLabel(side === "white" ? game.white : game.black)}
+      clock={side === "white" ? clock.whiteTimeMs : clock.blackTimeMs}
+      onMove={live && turn === side}
+      live={live}
+    />
+  );
 
-      <aside className="space-y-4">
+  return (
+    <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-4 px-4 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8 lg:py-12">
+      {/* Below lg the clocks sit on the board's edges, and the board is capped
+          by the viewport height so both stay on screen. */}
+      <div className="mx-auto w-full max-w-[max(18rem,calc(100svh-15rem))] space-y-3 lg:max-w-none lg:space-y-0">
+        <div className="space-y-1 px-1 lg:hidden">
+          <ConnectionNote status={status} />
+          {playerRow(orientation === "white" ? "black" : "white")}
+        </div>
+
+        <Board
+          fen={fen}
+          orientation={orientation}
+          selectable={
+            state?.role === turn && live && status === "open" && !optimistic
+          }
+          lastMove={lastMove}
+          onMove={handleMove}
+        />
+
+        <div className="space-y-3 px-1 lg:hidden">
+          {playerRow(orientation)}
+          <MoveStrip rows={rows} />
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <StatusBadge status={game.status} />
+            <span className="font-mono">
+              {formatTimeControl(game.initialTimeMs, game.incrementMs)}
+            </span>
+            {game.result && <span>{resultSummary(game)}</span>}
+          </div>
+        </div>
+      </div>
+
+      <aside className="flex flex-col gap-4">
         <GameSeat game={game} viewerId={viewerId} />
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
+        <Card className="max-lg:hidden">
+          <CardHeader className="flex items-center justify-between">
             <CardTitle>Players</CardTitle>
-            <StatusBadge status={game.status} />
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-mono text-xs">
+                {formatTimeControl(game.initialTimeMs, game.incrementMs)}
+              </span>
+              <StatusBadge status={game.status} />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <PlayerRow
-              label="Black"
-              name={playerLabel(game.black)}
-              clock={clock.blackTimeMs}
-              onMove={live && turn === "black"}
-              live={live}
-            />
+            {playerRow("black")}
             <Separator />
-            <PlayerRow
-              label="White"
-              name={playerLabel(game.white)}
-              clock={clock.whiteTimeMs}
-              onMove={live && turn === "white"}
-              live={live}
-            />
+            {playerRow("white")}
 
             {game.result && (
               <p className="text-muted-foreground text-sm">
@@ -416,9 +471,10 @@ export function LiveGame({
           viewerId={viewerId}
           connected={status === "open"}
           onAction={handleAction}
+          className="max-lg:order-first"
         />
 
-        <Card>
+        <Card className="max-lg:hidden">
           <CardHeader>
             <CardTitle>Moves</CardTitle>
           </CardHeader>
@@ -453,9 +509,7 @@ export function LiveGame({
         onOpenChange={(next: boolean) => {
           if (!next) setResultSeen(true);
         }}
-        onRematch={
-          playing ? () => handleAction("rematch:offer") : undefined
-        }
+        onRematch={playing ? () => handleAction("rematch:offer") : undefined}
       />
     </main>
   );

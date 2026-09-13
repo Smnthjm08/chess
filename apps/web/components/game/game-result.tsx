@@ -39,7 +39,11 @@ export function GameResultDialog({
           <DialogClose render={<Button variant="outline" />}>
             Review the board
           </DialogClose>
-          <Button variant="outline" render={<Link href="/lobby" />}>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href="/lobby" />}
+          >
             Back to lobby
           </Button>
           {onRematch && (

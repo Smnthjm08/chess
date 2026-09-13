@@ -2,28 +2,16 @@
 
 import { getCheckedSquare, getLegalMoves, isPromotion } from "@repo/game-core";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { preload } from "react-dom";
 import {
   colourOf,
+  pieceAsset,
   squareIndex,
   squareName,
   toSquares,
   type Orientation,
 } from "@/lib/board";
 import { cn } from "@/lib/utils";
-
-/*
- * The solid glyphs (U+265A-F) for both armies — the hollow set has no interior
- * to fill, so a white piece drawn with them vanishes on a light square. Colour
- * and stroke carry the side instead of the glyph.
- */
-const PIECES: Record<string, string> = {
-  k: "♚",
-  q: "♛",
-  r: "♜",
-  b: "♝",
-  n: "♞",
-  p: "♟",
-};
 
 const PIECE_NAMES: Record<string, string> = {
   k: "king",
@@ -37,6 +25,19 @@ const PIECE_NAMES: Record<string, string> = {
 const PROMOTION_CHOICES = ["q", "r", "b", "n"];
 
 export type MoveIntent = { from: string; to: string; promotion?: string };
+
+/** A background rather than an `<img>`, so dragging moves the square, not the picture. */
+function Piece({ piece, className }: { piece: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "pointer-events-none relative bg-contain bg-center bg-no-repeat",
+        className,
+      )}
+      style={{ backgroundImage: `url(${pieceAsset(piece)})` }}
+    />
+  );
+}
 
 function describe(square: string, piece: string | null): string {
   if (!piece) return `${square}, empty`;
@@ -79,6 +80,13 @@ export function Board({
   }, [fen, selectable]);
 
   const squares = useMemo(() => toSquares(fen), [fen]);
+
+  // Backgrounds are only fetched once styles apply; hoisting them into the
+  // document head keeps the pieces from popping in after the board.
+  for (const piece of new Set(squares)) {
+    if (piece) preload(pieceAsset(piece), { as: "image" });
+  }
+
   const checked = useMemo(() => getCheckedSquare(fen), [fen]);
   const targets = useMemo(
     () => new Set(selected ? getLegalMoves(fen, selected) : []),
@@ -170,9 +178,9 @@ export function Board({
               tabIndex={cursor === index ? 0 : -1}
               draggable={canDrag}
               className={cn(
-                "relative flex items-center justify-center text-[clamp(1.5rem,5vw,2.75rem)] leading-none",
+                "relative flex items-center justify-center",
                 "focus-visible:ring-ring focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none",
-                isLight ? "bg-surface-elevated" : "bg-surface-card",
+                isLight ? "bg-board-light" : "bg-board-dark",
                 selectable && (isOwn || isTarget) && "cursor-pointer",
                 selected === name && "ring-primary z-10 ring-3 ring-inset",
               )}
@@ -203,22 +211,13 @@ export function Board({
                 <span className="bg-destructive/40 pointer-events-none absolute inset-0" />
               )}
 
-              {piece && (
-                <span
-                  className={cn(
-                    "piece relative",
-                    colourOf(piece) === "white" ? "piece-white" : "piece-black",
-                  )}
-                >
-                  {PIECES[piece.toLowerCase()]}
-                </span>
-              )}
+              {piece && <Piece piece={piece} className="size-full" />}
 
               {isTarget &&
                 (piece ? (
-                  <span className="border-foreground/25 pointer-events-none absolute inset-[7%] rounded-full border-4" />
+                  <span className="border-board-hint pointer-events-none absolute inset-[7%] rounded-full border-4" />
                 ) : (
-                  <span className="bg-foreground/25 pointer-events-none absolute size-[28%] rounded-full" />
+                  <span className="bg-board-hint pointer-events-none absolute size-[28%] rounded-full" />
                 ))}
             </button>
           );
@@ -290,17 +289,13 @@ function PromotionPicker({
             key={choice}
             type="button"
             aria-label={`Promote to ${PIECE_NAMES[choice]}`}
-            className="hover:bg-accent flex flex-1 cursor-pointer items-center justify-center text-[clamp(1.25rem,4vw,2.25rem)] leading-none"
+            className="hover:bg-accent flex flex-1 cursor-pointer items-center justify-center"
             onClick={() => onChoose(choice)}
           >
-            <span
-              className={cn(
-                "piece",
-                orientation === "white" ? "piece-white" : "piece-black",
-              )}
-            >
-              {PIECES[choice]}
-            </span>
+            <Piece
+              piece={orientation === "white" ? choice.toUpperCase() : choice}
+              className="size-[90%]"
+            />
           </button>
         ))}
       </div>

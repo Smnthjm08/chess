@@ -32,18 +32,20 @@ function RematchCard({
   viewerId,
   connected,
   onAction,
+  className,
 }: {
   offer: string | null;
   viewerId: string;
   connected: boolean;
   onAction: (action: GameAction) => void;
+  className?: string;
 }) {
   const mine = offer === viewerId;
   const theirs = offer !== null && !mine;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={className}>
+      <CardHeader className="max-lg:hidden">
         <CardTitle>Rematch</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -98,6 +100,7 @@ export function GameControls({
   viewerId,
   connected,
   onAction,
+  className,
 }: {
   role: GameRole;
   turn: Turn;
@@ -109,6 +112,7 @@ export function GameControls({
   viewerId: string | null;
   connected: boolean;
   onAction: (action: GameAction) => void;
+  className?: string;
 }) {
   const [confirmingResign, setConfirmingResign] = useState(false);
 
@@ -127,6 +131,7 @@ export function GameControls({
         viewerId={viewerId}
         connected={connected}
         onAction={onAction}
+        className={className}
       />
     );
   }
@@ -142,8 +147,8 @@ export function GameControls({
   const canResume = status === "PAUSED" && role !== turn;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={className}>
+      <CardHeader className="max-lg:hidden">
         <CardTitle>Game</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

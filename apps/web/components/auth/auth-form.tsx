@@ -8,7 +8,6 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -265,7 +264,13 @@ export function AuthForm({
         </Button>
       )}
 
-      <FieldSeparator>or</FieldSeparator>
+      {/* Drawn as two rules rather than a label masking one line, so it needs
+          no background and reads the same in a card and in a dialog. */}
+      <div className="text-muted-foreground flex items-center gap-3 text-sm">
+        <span className="bg-border h-px flex-1" />
+        or
+        <span className="bg-border h-px flex-1" />
+      </div>
 
       <Tabs
         value={mode}
