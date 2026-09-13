@@ -1,10 +1,15 @@
 import { EventType, type ClientMessage } from "@repo/game-core";
 import z from "zod";
+import { canMatchText } from "../utils/text";
+
+// Every handler reads its game by this id, so a NUL is refused here rather
+// than reaching Postgres and coming back as an internal error.
+const gameId = z.string().min(1).refine(canMatchText, "Invalid game id");
 
 const gameIdOnly = <T extends ClientMessage["type"]>(type: T) =>
   z.object({
     type: z.literal(type),
-    gameId: z.string().min(1),
+    gameId,
   });
 
 const square = z.string().regex(/^[a-h][1-8]$/);
@@ -15,7 +20,7 @@ export const clientMessageSchema: z.ZodType<ClientMessage> =
     gameIdOnly(EventType.GAME_LEAVE),
     z.object({
       type: z.literal(EventType.GAME_MOVE),
-      gameId: z.string().min(1),
+      gameId,
       data: z.object({
         from: square,
         to: square,

@@ -11,6 +11,7 @@ import { scheduleClockExpiry } from "../sockets/clock-expiry";
 import { gameSocketManager } from "../sockets/game-socket";
 import { withGameLock } from "../sockets/game-lock";
 import { playerSelect } from "../utils/player-select";
+import { canMatchText } from "../utils/text";
 
 export const createGame = async (req: Request, res: Response) => {
   try {
@@ -185,6 +186,17 @@ export const joinGame = async (req: Request, res: Response) => {
       });
     }
 
+    // Ahead of the active-game check, whose `id: { not: gameId }` would carry
+    // the NUL into Postgres before `claimSeat` ever got to report a miss.
+    if (!canMatchText(gameId)) {
+      return res.status(404).json({
+        success: false,
+        error: "Game not found",
+        data: null,
+        message: "Game not found",
+      });
+    }
+
     const otherActiveGame = await prisma.game.findFirst({
       where: {
         status: GameStatus.ACTIVE,
@@ -321,14 +333,16 @@ export const getGameById = async (req: Request, res: Response) => {
       });
     }
 
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      include: {
-        white: { select: playerSelect },
-        black: { select: playerSelect },
-        moves: { orderBy: { moveNumber: "asc" } },
-      },
-    });
+    const game = canMatchText(gameId)
+      ? await prisma.game.findUnique({
+          where: { id: gameId },
+          include: {
+            white: { select: playerSelect },
+            black: { select: playerSelect },
+            moves: { orderBy: { moveNumber: "asc" } },
+          },
+        })
+      : null;
 
     if (!game) {
       return res.status(404).json({

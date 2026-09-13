@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { CreateGameButton } from "@/components/game/create-game-button";
 import { BoardPreview } from "@/components/landing/board-preview";
+import { FooterNav } from "@/components/landing/footer-nav";
 import { TimeControlGrid } from "@/components/landing/time-control-grid";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -221,26 +222,7 @@ export default function Home() {
             <p>Real-time multiplayer chess.</p>
           </div>
 
-          <nav className="flex gap-6">
-            <Link
-              href="/lobby"
-              className="hover:text-foreground transition-colors"
-            >
-              Lobby
-            </Link>
-            <Link
-              href="/login"
-              className="hover:text-foreground transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="hover:text-foreground transition-colors"
-            >
-              Create account
-            </Link>
-          </nav>
+          <FooterNav />
         </div>
       </footer>
     </div>

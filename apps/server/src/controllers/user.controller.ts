@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { GameResult, GameStatus, prisma } from "@repo/db";
 import { playerSelect, profileSelect } from "../utils/player-select";
+import { canMatchText } from "../utils/text";
 
 /** Every decisive result records a `winnerId`; these are the ones that do not. */
 const DRAW_RESULTS = [
@@ -46,7 +47,7 @@ export const getUserByHandle = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await findByHandle(handle);
+    const user = canMatchText(handle) ? await findByHandle(handle) : null;
 
     if (!user) {
       return res.status(404).json({
