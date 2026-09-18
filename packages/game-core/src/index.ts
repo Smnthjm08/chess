@@ -5,4 +5,5 @@ export { EventType } from "./types/events";
 // constants & engine
 export * from "./constants";
 export * from "./engine";
+export * from "./pgn";
 export * from "./time-control";

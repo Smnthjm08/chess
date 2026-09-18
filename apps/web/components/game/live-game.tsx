@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Board, type MoveIntent } from "@/components/game/board";
+import { ExportPgn } from "@/components/game/export-pgn";
 import { GameControls, type GameAction } from "@/components/game/game-controls";
 import { GameResultDialog } from "@/components/game/game-result";
 import { GameSeat } from "@/components/game/game-seat";
@@ -430,6 +431,7 @@ export function LiveGame({
               {formatTimeControl(game.initialTimeMs, game.incrementMs)}
             </span>
             {game.result && <span>{resultSummary(game)}</span>}
+            <ExportPgn game={game} className="ml-auto" />
           </div>
         </div>
       </div>
@@ -475,8 +477,9 @@ export function LiveGame({
         />
 
         <Card className="max-lg:hidden">
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <CardTitle>Moves</CardTitle>
+            <ExportPgn game={game} />
           </CardHeader>
           <CardContent>
             {rows.length === 0 ? (
