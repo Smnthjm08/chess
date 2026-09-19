@@ -20,8 +20,7 @@
       "dependsOn": ["transit"]
     },
     "test": {
-      "dependsOn": ["transit"],
-      "cache": false
+      "dependsOn": ["transit"]
     },
     "check-types": {
       "dependsOn": ["transit"]

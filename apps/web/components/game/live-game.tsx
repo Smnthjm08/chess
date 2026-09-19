@@ -21,6 +21,7 @@ import { ExportPgn } from "@/components/game/export-pgn";
 import { GameControls, type GameAction } from "@/components/game/game-controls";
 import { GameResultDialog } from "@/components/game/game-result";
 import { GameSeat } from "@/components/game/game-seat";
+import { Material } from "@/components/game/material";
 import { Button } from "@/components/ui/button";
 import {
   MoveStrip,
@@ -45,6 +46,7 @@ import {
   type ClockBaseline,
 } from "@/lib/clock";
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
+import { materialOf, type SideMaterial } from "@/lib/material";
 import { resultSummary } from "@/lib/result";
 import {
   plyLabel,
@@ -104,20 +106,25 @@ function PlayerRow({
   clock,
   onMove,
   live,
+  material,
 }: {
   label: string;
   name: string;
   clock: number;
   onMove: boolean;
   live: boolean;
+  material: SideMaterial;
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <div>
+      <div className="min-w-0">
         <p className="text-muted-foreground text-xs tracking-wider uppercase">
           {label}
         </p>
-        <p className="text-sm font-medium">{name}</p>
+        <p className="flex flex-wrap items-center gap-x-2 text-sm font-medium">
+          {name}
+          <Material material={material} />
+        </p>
       </div>
       <span
         className={cn(
@@ -333,6 +340,7 @@ export function LiveGame({
   );
 
   const finished = game.status === "FINISHED";
+  const material = useMemo(() => materialOf(shownFen), [shownFen]);
   // There is nothing to play on from a mate or a stalemate.
   const forkable = useMemo(
     () => !getOutcome(createEngine(shownFen)).isGameOver,
@@ -433,6 +441,7 @@ export function LiveGame({
       clock={side === "white" ? clock.whiteTimeMs : clock.blackTimeMs}
       onMove={live && turn === side}
       live={live}
+      material={material[side]}
     />
   );
 

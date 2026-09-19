@@ -89,18 +89,26 @@ export type ProfileUser = Player & {
   createdAt: string;
 };
 
-export type ProfileStats = {
+export type Record3 = { wins: number; losses: number; draws: number };
+
+export type ProfileStats = Record3 & {
   played: number;
-  wins: number;
-  losses: number;
-  draws: number;
+  /** Wins over games played, 0–1; null before the first result. */
+  winRate: number | null;
+  byColour: { white: Record3; black: Record3 };
+  byCategory: (Record3 & { category: string })[];
+  streak: {
+    current: { outcome: "win" | "loss" | "draw"; length: number } | null;
+    bestWin: number;
+  };
 };
 
 export type Profile = {
   user: ProfileUser;
   stats: ProfileStats;
-  games: Game[];
 };
+
+export type GameResultFilter = "won" | "lost" | "drawn";
 
 export type Pagination = {
   page: number;
@@ -217,4 +225,18 @@ export async function forkGame(gameId: string, ply: number) {
 
 export async function getProfile(handle: string) {
   return request<Profile>(`/users/${encodeURIComponent(handle)}`);
+}
+
+export async function listUserGames(
+  handle: string,
+  params?: { result?: GameResultFilter; page?: number },
+) {
+  const query = new URLSearchParams();
+
+  if (params?.result) query.set("result", params.result);
+  if (params?.page) query.set("page", String(params.page));
+
+  const suffix = query.size > 0 ? `?${query}` : "";
+
+  return request<Game[]>(`/users/${encodeURIComponent(handle)}/games${suffix}`);
 }

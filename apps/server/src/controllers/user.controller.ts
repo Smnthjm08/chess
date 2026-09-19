@@ -1,18 +1,10 @@
 import type { Request, Response } from "express";
-import { GameResult, GameStatus, prisma } from "@repo/db";
+import { GameStatus, prisma, type Prisma } from "@repo/db";
 import { playerSelect, profileSelect } from "../utils/player-select";
+import { computeStats, DRAW_RESULTS } from "../utils/profile-stats";
 import { canMatchText } from "../utils/text";
 
-/** Every decisive result records a `winnerId`; these are the ones that do not. */
-const DRAW_RESULTS = [
-  GameResult.STALEMATE,
-  GameResult.THREEFOLD_REPETITION,
-  GameResult.INSUFFICIENT_MATERIAL,
-  GameResult.FIFTY_MOVE_RULE,
-  GameResult.DRAW_AGREED,
-];
-
-const RECENT_GAMES = 10;
+const PAGE_SIZE = 20;
 
 /**
  * Profiles are addressed by username, falling back to the user id so guests —
@@ -33,50 +25,122 @@ async function findByHandle(handle: string) {
   });
 }
 
+function readHandle(req: Request): string | undefined {
+  const raw = req.params.handle;
+  return Array.isArray(raw) ? raw[0] : raw;
+}
+
+async function lookup(req: Request, res: Response) {
+  const handle = readHandle(req);
+
+  if (!handle) {
+    res.status(400).json({
+      success: false,
+      error: "Handle is required",
+      data: null,
+      message: "Invalid handle",
+    });
+    return null;
+  }
+
+  const user = canMatchText(handle) ? await findByHandle(handle) : null;
+
+  if (!user) {
+    res.status(404).json({
+      success: false,
+      error: "User not found",
+      data: null,
+      message: "User not found",
+    });
+    return null;
+  }
+
+  return user;
+}
+
 export const getUserByHandle = async (req: Request, res: Response) => {
   try {
-    const rawHandle = req.params.handle;
-    const handle = Array.isArray(rawHandle) ? rawHandle[0] : rawHandle;
+    const user = await lookup(req, res);
+    if (!user) return;
 
-    if (!handle) {
-      return res.status(400).json({
-        success: false,
-        error: "Handle is required",
-        data: null,
-        message: "Invalid handle",
-      });
-    }
+    // Scored in memory: one indexed read of a player's finished games is cheap
+    // at this scale, and streaks need the games in order anyway.
+    const finished = await prisma.game.findMany({
+      where: {
+        status: GameStatus.FINISHED,
+        OR: [{ whiteId: user.id }, { blackId: user.id }],
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        whiteId: true,
+        blackId: true,
+        winnerId: true,
+        result: true,
+        initialTimeMs: true,
+        incrementMs: true,
+      },
+    });
 
-    const user = canMatchText(handle) ? await findByHandle(handle) : null;
+    res.status(200).json({
+      success: true,
+      error: null,
+      data: { user, stats: computeStats(finished, user.id) },
+      message: "Profile fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching profile", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      data: null,
+      message: "Internal server error",
+    });
+  }
+};
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: "User not found",
-        data: null,
-        message: "User not found",
-      });
-    }
+const RESULT_FILTERS = ["won", "lost", "drawn"] as const;
+type ResultFilter = (typeof RESULT_FILTERS)[number];
 
-    const seated = [{ whiteId: user.id }, { blackId: user.id }];
-    const finished = { status: GameStatus.FINISHED, OR: seated };
+function resultWhere(
+  userId: string,
+  filter: ResultFilter | undefined,
+): Prisma.GameWhereInput {
+  const seated = { OR: [{ whiteId: userId }, { blackId: userId }] };
+  const finished = { ...seated, status: GameStatus.FINISHED };
 
-    // Losses are counted rather than derived from played - wins - draws: a game
-    // abandoned before the second seat was filled finishes with no winner and
-    // no draw result, and would otherwise be scored as a loss.
-    const [played, wins, draws, losses, games] = await Promise.all([
-      prisma.game.count({ where: finished }),
-      prisma.game.count({ where: { ...finished, winnerId: user.id } }),
-      prisma.game.count({
-        where: { ...finished, result: { in: DRAW_RESULTS } },
-      }),
-      prisma.game.count({
-        where: { ...finished, winnerId: { not: null, notIn: [user.id] } },
-      }),
+  switch (filter) {
+    case "won":
+      return { ...finished, winnerId: userId };
+    case "lost":
+      return { ...finished, winnerId: { not: null, notIn: [userId] } };
+    case "drawn":
+      return { ...finished, result: { in: DRAW_RESULTS } };
+    default:
+      return seated;
+  }
+}
+
+/** A player's games, newest first, optionally only those they won, lost or drew. */
+export const getUserGames = async (req: Request, res: Response) => {
+  try {
+    const user = await lookup(req, res);
+    if (!user) return;
+
+    const { page, result } = req.query;
+    const filter = RESULT_FILTERS.find((value) => value === result);
+    const pageNumber = Math.max(
+      1,
+      Number.parseInt(typeof page === "string" ? page : "1", 10) || 1,
+    );
+    const where = resultWhere(user.id, filter);
+
+    const [total, games] = await Promise.all([
+      prisma.game.count({ where }),
       prisma.game.findMany({
-        where: { OR: seated },
+        where,
         orderBy: { createdAt: "desc" },
-        take: RECENT_GAMES,
+        skip: (pageNumber - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
         include: {
           white: { select: playerSelect },
           black: { select: playerSelect },
@@ -87,15 +151,17 @@ export const getUserByHandle = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       error: null,
-      data: {
-        user,
-        stats: { played, wins, losses, draws },
-        games,
+      data: games,
+      pagination: {
+        page: pageNumber,
+        limit: PAGE_SIZE,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
       },
-      message: "Profile fetched successfully",
+      message: "Games fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching profile", error);
+    console.error("Error fetching player games", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
