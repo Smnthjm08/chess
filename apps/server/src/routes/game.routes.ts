@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createGame,
+  forkGame,
   joinGame,
   getGames,
   getGameById,
@@ -13,5 +14,6 @@ gameRouter.get("/", getGames);
 gameRouter.get("/:gameId", getGameById);
 gameRouter.post("/", authMiddleware, createGame);
 gameRouter.post("/:gameId/join", authMiddleware, joinGame);
+gameRouter.post("/:gameId/fork", authMiddleware, forkGame);
 
 export default gameRouter;

@@ -4,6 +4,8 @@ import type { Move } from "../api";
 import {
   clampPly,
   formatSpent,
+  plyAt,
+  plyLabel,
   positionAt,
   stepPly,
   timeSpent,
@@ -127,5 +129,56 @@ describe("formatSpent", () => {
     expect(formatSpent(4_280)).toBe("4.2s");
     expect(formatSpent(34_900)).toBe("34s");
     expect(formatSpent(65_000)).toBe("1:05");
+  });
+});
+
+describe("from a forked position", () => {
+  // Black to move on move 2.
+  const FORK_FEN =
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
+
+  test("plyAt numbers from the position and starts on its mover", () => {
+    expect(plyAt(FORK_FEN, 1)).toEqual({ number: 2, side: "black" });
+    expect(plyAt(FORK_FEN, 2)).toEqual({ number: 3, side: "white" });
+    expect(plyAt(FORK_FEN, 3)).toEqual({ number: 3, side: "black" });
+  });
+
+  test("the standard start is move 1, white", () => {
+    expect(plyAt(START_FEN, 1)).toEqual({ number: 1, side: "white" });
+    expect(plyAt(START_FEN, 4)).toEqual({ number: 2, side: "black" });
+  });
+
+  test("toRows opens on a black-only row", () => {
+    expect(toRows(MOVES, [], FORK_FEN)).toEqual([
+      { number: 2, black: { ply: 1, san: "e4", spentMs: null } },
+      {
+        number: 3,
+        white: { ply: 2, san: "e5", spentMs: null },
+        black: { ply: 3, san: "Nf3", spentMs: null },
+      },
+    ]);
+  });
+
+  test("ply 0 is the forked position", () => {
+    expect(positionAt(MOVES, 0, FORK_FEN).fen).toBe(FORK_FEN);
+  });
+
+  test("plyLabel uses the fork's numbering", () => {
+    expect(plyLabel(MOVES, 0, FORK_FEN)).toBe("the starting position");
+    expect(plyLabel(MOVES, 1, FORK_FEN)).toBe("2… e4");
+    expect(plyLabel(MOVES, 2, FORK_FEN)).toBe("3. e5");
+  });
+
+  test("timeSpent pairs clocks by the side that actually moved", () => {
+    const moves = [
+      move(1, "Nc6", "b8", "c6", 295_000),
+      move(2, "Bb5", "f1", "b5", 290_000),
+      move(3, "a6", "a7", "a6", 285_000),
+    ];
+
+    // Black moves first (clock not yet running), then white 10s, black 10s.
+    expect(timeSpent(moves, 300_000, 0, FORK_FEN)).toEqual([
+      5_000, 10_000, 10_000,
+    ]);
   });
 });

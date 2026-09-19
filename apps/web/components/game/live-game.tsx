@@ -6,14 +6,17 @@ import {
   EventType,
   formatTimeControl,
   getActiveTurn,
+  getOutcome,
   tryMove,
 } from "@repo/game-core";
 import { ArrowUpDown } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Board, type MoveIntent } from "@/components/game/board";
 import { CopyFen } from "@/components/game/copy-fen";
+import { ForkGame } from "@/components/game/fork-game";
 import { ExportPgn } from "@/components/game/export-pgn";
 import { GameControls, type GameAction } from "@/components/game/game-controls";
 import { GameResultDialog } from "@/components/game/game-result";
@@ -44,6 +47,7 @@ import {
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
 import { resultSummary } from "@/lib/result";
 import {
+  plyLabel,
   positionAt,
   REVIEW_KEYS,
   stepPly,
@@ -126,14 +130,6 @@ function PlayerRow({
       </span>
     </div>
   );
-}
-
-function plyLabel(moves: GameDetail["moves"], ply: number) {
-  const move = moves[ply - 1];
-  if (!move) return "the starting position";
-
-  const number = Math.ceil(ply / 2);
-  return ply % 2 ? `${number}. ${move.san}` : `${number}… ${move.san}`;
 }
 
 export function LiveGame({
@@ -273,11 +269,12 @@ export function LiveGame({
     : initialGame;
 
   const moves = initialGame.moves;
+  const startFen = initialGame.startFen;
   // Null follows the game as it is played; a number pins the board to that ply.
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const reviewing = reviewPly !== null && reviewPly < moves.length;
   const currentPly = reviewing ? reviewPly : moves.length;
-  const reviewed = reviewing ? positionAt(moves, reviewPly) : null;
+  const reviewed = reviewing ? positionAt(moves, reviewPly, startFen) : null;
 
   const [flipped, setFlipped] = useState(false);
 
@@ -324,12 +321,23 @@ export function LiveGame({
     () =>
       toRows(
         moves,
-        timeSpent(moves, initialGame.initialTimeMs, initialGame.incrementMs),
+        timeSpent(
+          moves,
+          initialGame.initialTimeMs,
+          initialGame.incrementMs,
+          startFen,
+        ),
+        startFen,
       ),
-    [moves, initialGame.initialTimeMs, initialGame.incrementMs],
+    [moves, initialGame.initialTimeMs, initialGame.incrementMs, startFen],
   );
 
   const finished = game.status === "FINISHED";
+  // There is nothing to play on from a mate or a stalemate.
+  const forkable = useMemo(
+    () => !getOutcome(createEngine(shownFen)).isGameOver,
+    [shownFen],
+  );
 
   // Only announce a result the viewer watched arrive. Opening a game that was
   // already over is a review, and a modal over it is just in the way.
@@ -457,7 +465,7 @@ export function LiveGame({
           <p className="text-muted-foreground truncate text-xs">
             {reviewing && (
               <>
-                Viewing {plyLabel(moves, reviewPly)}
+                Viewing {plyLabel(moves, reviewPly, startFen)}
                 {live && (
                   <>
                     {" · "}
@@ -472,8 +480,23 @@ export function LiveGame({
                 )}
               </>
             )}
+            {!reviewing && initialGame.forkedFromId && (
+              <Link
+                href={`/game/${initialGame.forkedFromId}`}
+                className="hover:text-foreground underline underline-offset-2"
+              >
+                Forked from an earlier game
+              </Link>
+            )}
           </p>
           <div className="flex items-center gap-1">
+            {finished && (
+              <ForkGame
+                gameId={initialGame.id}
+                ply={currentPly}
+                disabled={!forkable}
+              />
+            )}
             <CopyFen fen={shownFen} />
             <Button
               type="button"

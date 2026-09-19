@@ -53,6 +53,9 @@ export type Game = {
   id: string;
   status: GameStatus;
   fen: string;
+  startFen: string;
+  forkedFromId: string | null;
+  forkedFromPly: number | null;
   result: GameResult | null;
   initialTimeMs: number;
   incrementMs: number;
@@ -202,6 +205,14 @@ export async function joinGame(gameId: string) {
     `/games/${gameId}/join`,
     { method: "POST" },
   );
+}
+
+/** A new waiting game from the position after `ply` of a finished game. */
+export async function forkGame(gameId: string, ply: number) {
+  return request<Game>(`/games/${gameId}/fork`, {
+    method: "POST",
+    body: JSON.stringify({ ply }),
+  });
 }
 
 export async function getProfile(handle: string) {

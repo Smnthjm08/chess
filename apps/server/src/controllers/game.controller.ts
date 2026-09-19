@@ -2,7 +2,9 @@ import {
   DEFAULT_TIME_CONTROL,
   START_FEN,
   TIME_CONTROLS,
+  createEngine,
   getActiveTurn,
+  getOutcome,
   isTimeControlKey,
 } from "@repo/game-core";
 import type { Request, Response } from "express";
@@ -118,20 +120,21 @@ function claimSeat(gameId: string, userId: string): Promise<SeatResult> {
 
       if (!role) return { status: "full" } as const;
 
-      // Filling the second seat is what starts the game and its clock.
+      // Filling the second seat is what starts the game and its clock. That
+      // is usually black's, but a fork seats its creator on the side to move.
+      const start = (role === "white" ? game.blackId : game.whiteId)
+        ? { status: GameStatus.ACTIVE, lastMoveAt: new Date() }
+        : {};
+
       const { count } =
         role === "white"
           ? await prisma.game.updateMany({
               where: { id: gameId, whiteId: null },
-              data: { whiteId: userId },
+              data: { whiteId: userId, ...start },
             })
           : await prisma.game.updateMany({
               where: { id: gameId, blackId: null },
-              data: {
-                blackId: userId,
-                status: GameStatus.ACTIVE,
-                lastMoveAt: new Date(),
-              },
+              data: { blackId: userId, ...start },
             });
 
       // Lost the seat to another process between the read and the write.
@@ -242,6 +245,108 @@ export const joinGame = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error joining game", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      data: null,
+      message: "Internal server error",
+    });
+  }
+};
+
+function refuse(res: Response, status: number, error: string) {
+  return res.status(status).json({
+    success: false,
+    error,
+    data: null,
+    message: error,
+  });
+}
+
+/**
+ * A new WAITING game from a position in a finished one. The creator takes the
+ * side to move, the time control carries over with full clocks, and the moves
+ * before the fork stay with the original — the fork links back instead.
+ */
+export const forkGame = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const rawGameId = req.params.gameId;
+    const gameId = Array.isArray(rawGameId) ? rawGameId[0] : rawGameId;
+    const { ply } = (req.body ?? {}) as { ply?: unknown };
+
+    if (!userId) return refuse(res, 401, "Unauthorized");
+    if (!gameId || !canMatchText(gameId)) {
+      return refuse(res, 404, "Game not found");
+    }
+    if (typeof ply !== "number" || !Number.isInteger(ply) || ply < 0) {
+      return refuse(res, 400, "ply must be a non-negative integer");
+    }
+
+    const source = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        moves: { orderBy: { moveNumber: "asc" }, select: { fen: true } },
+      },
+    });
+
+    if (!source) return refuse(res, 404, "Game not found");
+
+    // Forking a live game would be a way to analyse it mid-play.
+    if (source.status !== GameStatus.FINISHED) {
+      return refuse(res, 400, "Only finished games can be forked");
+    }
+    if (ply > source.moves.length) {
+      return refuse(res, 400, "That move is not in the game");
+    }
+
+    const fen = ply === 0 ? source.startFen : source.moves[ply - 1]!.fen;
+
+    if (getOutcome(createEngine(fen)).isGameOver) {
+      return refuse(res, 400, "The game is already over in that position");
+    }
+
+    const activeGame = await prisma.game.findFirst({
+      where: {
+        status: GameStatus.ACTIVE,
+        OR: [{ whiteId: userId }, { blackId: userId }],
+      },
+    });
+
+    if (activeGame) {
+      return res.status(400).json({
+        success: false,
+        error: "You are already in an active game",
+        data: { activeGameId: activeGame.id },
+        message: "Single active game constraint violation",
+      });
+    }
+
+    const game = await prisma.game.create({
+      data: {
+        ...(getActiveTurn(fen) === "white"
+          ? { whiteId: userId }
+          : { blackId: userId }),
+        status: GameStatus.WAITING,
+        fen,
+        startFen: fen,
+        forkedFromId: source.id,
+        forkedFromPly: ply,
+        initialTimeMs: source.initialTimeMs,
+        incrementMs: source.incrementMs,
+        whiteTimeMs: source.initialTimeMs,
+        blackTimeMs: source.initialTimeMs,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      error: null,
+      data: game,
+      message: "Game forked",
+    });
+  } catch (error) {
+    console.error("Error forking game", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

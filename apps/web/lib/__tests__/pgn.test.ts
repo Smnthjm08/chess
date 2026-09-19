@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { START_FEN } from "@repo/game-core";
 import type { GameDetail, GameResult, GameStatus, Move } from "../api";
 import { gamePgn, pgnFilename } from "../pgn";
 
@@ -26,6 +27,9 @@ const game = (overrides: Partial<GameDetail> = {}): GameDetail =>
     id: "g1",
     status: "FINISHED" as GameStatus,
     fen: "",
+    startFen: START_FEN,
+    forkedFromId: null,
+    forkedFromPly: null,
     result: "CHECKMATE" as GameResult,
     initialTimeMs: 180_000,
     incrementMs: 2_000,
@@ -70,7 +74,9 @@ describe("gamePgn", () => {
   });
 
   test("an unfinished game exports as in progress, not as a draw", () => {
-    const pgn = gamePgn(game({ status: "ACTIVE", result: null, winnerId: null }));
+    const pgn = gamePgn(
+      game({ status: "ACTIVE", result: null, winnerId: null }),
+    );
 
     expect(headerOf(pgn, "Result")).toBe("*");
     expect(pgn.trimEnd().endsWith("*")).toBe(true);
@@ -81,12 +87,12 @@ describe("gamePgn", () => {
     expect(headerOf(gamePgn(game({ result: "TIMEOUT" })), "Termination")).toBe(
       "Time forfeit",
     );
-    expect(headerOf(gamePgn(game({ result: "ABANDONED" })), "Termination")).toBe(
-      "Abandoned",
-    );
-    expect(headerOf(gamePgn(game({ result: "CHECKMATE" })), "Termination")).toBe(
-      "Normal",
-    );
+    expect(
+      headerOf(gamePgn(game({ result: "ABANDONED" })), "Termination"),
+    ).toBe("Abandoned");
+    expect(
+      headerOf(gamePgn(game({ result: "CHECKMATE" })), "Termination"),
+    ).toBe("Normal");
   });
 
   test("the time control is carried over in seconds", () => {
@@ -95,6 +101,19 @@ describe("gamePgn", () => {
 
   test("the movetext is the stored move list in order", () => {
     expect(gamePgn(game())).toContain("1. e4 e5 2. Qh5 1-0");
+  });
+
+  test("a forked game carries its starting position", () => {
+    const fen =
+      "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
+    const pgn = gamePgn(game({ startFen: fen, moves: [move(1, "Nc6")] }));
+
+    expect(headerOf(pgn, "FEN")).toBe(fen);
+    expect(pgn).toContain("2... Nc6");
+  });
+
+  test("a standard game has no FEN tag", () => {
+    expect(headerOf(gamePgn(game()), "FEN")).toBeUndefined();
   });
 });
 

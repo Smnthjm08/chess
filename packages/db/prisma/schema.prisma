@@ -29,11 +29,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions Session[]
-  accounts Account[]
-  whiteGames Game[] @relation("WhitePlayer")
-  blackGames Game[] @relation("BlackPlayer")
-  winner     Game[] @relation("Winner")
+  sessions   Session[]
+  accounts   Account[]
+  whiteGames Game[]    @relation("WhitePlayer")
+  blackGames Game[]    @relation("BlackPlayer")
+  winner     Game[]    @relation("Winner")
 }
 
 model Session {
@@ -107,7 +107,15 @@ model Game {
   id     String     @id @default(uuid())
   status GameStatus @default(WAITING)
 
-  fen String
+  fen      String
+  // Where move 1 was played from. The standard position unless forked.
+  startFen String @default("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
+  forkedFromId  String?
+  forkedFrom    Game?   @relation("Fork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks         Game[]  @relation("Fork")
+  // Plies of the original played before the fork; 0 is its start position.
+  forkedFromPly Int?
 
   result GameResult?
 
@@ -116,8 +124,8 @@ model Game {
   initialTimeMs Int @default(300000)
   incrementMs   Int @default(0)
 
-  whiteTimeMs Int @default(300000)
-  blackTimeMs Int @default(300000)
+  whiteTimeMs Int       @default(300000)
+  blackTimeMs Int       @default(300000)
   lastMoveAt  DateTime?
 
   whiteId String?
@@ -151,7 +159,7 @@ model Move {
   clockMs    Int?
 
   gameId String
-  game Game @relation(fields: [gameId], references: [id])
+  game   Game   @relation(fields: [gameId], references: [id])
 
   createdAt DateTime @default(now())
 

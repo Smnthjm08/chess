@@ -1,4 +1,4 @@
-import { toPgn, type PgnResult } from "@repo/game-core";
+import { START_FEN, toPgn, type PgnResult } from "@repo/game-core";
 import { playerLabel, type GameDetail, type GameResult } from "./api";
 
 /** An unfinished game exports as `*` — PGN's "result unknown". */
@@ -44,6 +44,7 @@ export function gamePgn(game: GameDetail): string {
         game.status === "FINISHED" && game.result
           ? (TERMINATION[game.result] ?? "Normal")
           : undefined,
+      fen: game.startFen === START_FEN ? undefined : game.startFen,
     },
     game.moves.map((move) => move.san),
   );

@@ -18,6 +18,8 @@ export type PgnTags = {
   initialMs?: number;
   incrementMs?: number;
   termination?: string;
+  /** Only for a game that did not start from the standard position. */
+  fen?: string;
 };
 
 /** The export standard wraps movetext at 80 columns. */
@@ -46,12 +48,25 @@ function formatPgnTimeControl(initialMs: number, incrementMs: number) {
   return `${Math.round(initialMs / 1000)}+${Math.round(incrementMs / 1000)}`;
 }
 
-function formatMovetext(sanMoves: string[], result: PgnResult) {
+function formatMovetext(
+  sanMoves: string[],
+  result: PgnResult,
+  fen: string | undefined,
+) {
+  const [, turn, , , , fullmove] = fen?.split(" ") ?? [];
+  const blackFirst = turn === "b";
+  const firstNumber = Number(fullmove) || 1;
+
   // A move number and the move it introduces are one token, so wrapping can
-  // never leave the number stranded at the end of a line.
-  const tokens = sanMoves.map((san, index) =>
-    index % 2 === 0 ? `${index / 2 + 1}. ${san}` : san,
-  );
+  // never leave the number stranded at the end of a line. Movetext opening on
+  // a black move numbers it `n...`.
+  const tokens = sanMoves.map((san, index) => {
+    const offset = index + (blackFirst ? 1 : 0);
+    const number = firstNumber + Math.floor(offset / 2);
+
+    if (offset % 2 === 0) return `${number}. ${san}`;
+    return index === 0 ? `${number}... ${san}` : san;
+  });
 
   tokens.push(result);
 
@@ -85,11 +100,16 @@ export function toPgn(tags: PgnTags, sanMoves: string[]): string {
 
   if (tags.initialMs !== undefined && tags.incrementMs !== undefined) {
     headers.push(
-      tag("TimeControl", formatPgnTimeControl(tags.initialMs, tags.incrementMs)),
+      tag(
+        "TimeControl",
+        formatPgnTimeControl(tags.initialMs, tags.incrementMs),
+      ),
     );
   }
 
   if (tags.termination) headers.push(tag("Termination", tags.termination));
 
-  return `${headers.join("\n")}\n\n${formatMovetext(sanMoves, tags.result)}\n`;
+  if (tags.fen) headers.push(tag("SetUp", "1"), tag("FEN", tags.fen));
+
+  return `${headers.join("\n")}\n\n${formatMovetext(sanMoves, tags.result, tags.fen)}\n`;
 }

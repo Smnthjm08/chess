@@ -870,6 +870,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         ...players,
         initialTimeMs: game.initialTimeMs,
         incrementMs: game.incrementMs,
+        startFen: game.startFen,
       });
 
       rematchOfferStore.clear(message.gameId);

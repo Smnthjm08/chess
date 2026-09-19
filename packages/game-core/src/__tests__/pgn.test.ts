@@ -54,10 +54,9 @@ describe("toPgn", () => {
   test("dates render in UTC regardless of the local zone", () => {
     // 23:40 UTC-on-the-13th is already the 14th in +05:30, so a local-time
     // render would disagree with the server's own date.
-    const pgn = toPgn(
-      { ...base, date: new Date("2026-09-13T23:40:00Z") },
-      ["e4"],
-    );
+    const pgn = toPgn({ ...base, date: new Date("2026-09-13T23:40:00Z") }, [
+      "e4",
+    ]);
 
     expect(headerOf(pgn, "Date")).toBe("2026.09.13");
   });
@@ -82,9 +81,12 @@ describe("toPgn", () => {
   });
 
   test("termination is written only when given", () => {
-    expect(headerOf(toPgn({ ...base, termination: "Time forfeit" }, []), "Termination")).toBe(
-      "Time forfeit",
-    );
+    expect(
+      headerOf(
+        toPgn({ ...base, termination: "Time forfeit" }, []),
+        "Termination",
+      ),
+    ).toBe("Time forfeit");
     expect(toPgn(base, [])).not.toContain("Termination");
   });
 
@@ -95,7 +97,10 @@ describe("toPgn", () => {
   });
 
   test("movetext wraps at 80 columns", () => {
-    const pgn = toPgn(base, Array.from({ length: 120 }, () => "Nf3"));
+    const pgn = toPgn(
+      base,
+      Array.from({ length: 120 }, () => "Nf3"),
+    );
 
     for (const line of movetextOf(pgn)!.split("\n")) {
       expect(line.length).toBeLessThanOrEqual(80);
@@ -103,7 +108,10 @@ describe("toPgn", () => {
   });
 
   test("wrapping never splits a move number from its move", () => {
-    const pgn = toPgn(base, Array.from({ length: 120 }, () => "Nf3"));
+    const pgn = toPgn(
+      base,
+      Array.from({ length: 120 }, () => "Nf3"),
+    );
 
     for (const line of movetextOf(pgn)!.split("\n")) {
       expect(line).not.toMatch(/\d+\.$/);
@@ -125,8 +133,26 @@ describe("toPgn round-trips through chess.js", () => {
 
   test("a parsed export reaches the same position", () => {
     const moves = [
-      "e4", "e5", "Nf3", "Nc6", "Bb5", "a6", "Ba4", "Nf6", "O-O", "Be7",
-      "Re1", "b5", "Bb3", "d6", "c3", "O-O", "h3", "Nb8", "d4", "Nbd7",
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Be7",
+      "Re1",
+      "b5",
+      "Bb3",
+      "d6",
+      "c3",
+      "O-O",
+      "h3",
+      "Nb8",
+      "d4",
+      "Nbd7",
     ];
     const played = play(moves);
 
@@ -180,8 +206,22 @@ describe("toPgn round-trips through chess.js", () => {
 
   test("promotion, castling and disambiguation survive the round trip", () => {
     const moves = [
-      "e4", "d5", "exd5", "Nf6", "d6", "Be6", "dxc7", "Nc6", "Nf3", "g6",
-      "Be2", "Bg7", "O-O", "O-O", "cxd8=Q", "Raxd8",
+      "e4",
+      "d5",
+      "exd5",
+      "Nf6",
+      "d6",
+      "Be6",
+      "dxc7",
+      "Nc6",
+      "Nf3",
+      "g6",
+      "Be2",
+      "Bg7",
+      "O-O",
+      "O-O",
+      "cxd8=Q",
+      "Raxd8",
     ];
     const played = play(moves);
 
@@ -192,5 +232,37 @@ describe("toPgn round-trips through chess.js", () => {
     expect(parsed.history()).toContain("cxd8=Q");
     expect(parsed.history()).toContain("O-O");
     expect(parsed.history()).toContain("Raxd8");
+  });
+});
+
+describe("toPgn from a set-up position", () => {
+  // After 1. e4 e5 2. Nf3: black to move on move 2.
+  const fen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
+
+  test("writes SetUp and FEN, and numbers from the position", () => {
+    const pgn = toPgn({ ...base, result: "*", fen }, ["Nc6", "Bb5", "a6"]);
+
+    expect(headerOf(pgn, "SetUp")).toBe("1");
+    expect(headerOf(pgn, "FEN")).toBe(fen);
+    expect(movetextOf(pgn)).toBe("2... Nc6 3. Bb5 a6 *");
+  });
+
+  test("omits both tags for a standard game", () => {
+    const pgn = toPgn(base, ["e4"]);
+
+    expect(headerOf(pgn, "SetUp")).toBeUndefined();
+    expect(headerOf(pgn, "FEN")).toBeUndefined();
+  });
+
+  test("parses back to the same position", () => {
+    const pgn = toPgn({ ...base, result: "*", fen }, ["Nc6", "Bb5", "a6"]);
+
+    const replay = new Chess(fen);
+    ["Nc6", "Bb5", "a6"].forEach((san) => replay.move(san));
+
+    const parsed = new Chess();
+    parsed.loadPgn(pgn);
+
+    expect(parsed.fen()).toBe(replay.fen());
   });
 });

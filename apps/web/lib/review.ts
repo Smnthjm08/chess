@@ -5,6 +5,23 @@ export type PlyCell = { ply: number; san: string; spentMs: number | null };
 export type MoveRow = { number: number; white?: PlyCell; black?: PlyCell };
 
 /**
+ * The move number and mover of ply `ply` (1-based) in a game that began at
+ * `startFen` — a fork can open on black's move, deep into the game.
+ */
+export function plyAt(
+  startFen: string,
+  ply: number,
+): { number: number; side: "white" | "black" } {
+  const [, turn, , , , fullmove] = startFen.split(" ");
+  const offset = ply - 1 + (turn === "b" ? 1 : 0);
+
+  return {
+    number: (Number(fullmove) || 1) + Math.floor(offset / 2),
+    side: offset % 2 === 0 ? "white" : "black",
+  };
+}
+
+/**
  * Time each move took, from the mover's clock before and after it. Null where
  * either reading is missing — rows from before clocks were recorded.
  */
@@ -12,6 +29,7 @@ export function timeSpent(
   moves: Move[],
   initialTimeMs: number,
   incrementMs: number,
+  startFen: string = START_FEN,
 ): (number | null)[] {
   const before: Record<"white" | "black", number | null> = {
     white: initialTimeMs,
@@ -19,7 +37,7 @@ export function timeSpent(
   };
 
   return moves.map((move) => {
-    const side = move.moveNumber % 2 === 1 ? "white" : "black";
+    const { side } = plyAt(startFen, move.moveNumber);
     const prior = before[side];
     before[side] = move.clockMs;
 
@@ -43,20 +61,21 @@ export function formatSpent(ms: number): string {
 export function toRows(
   moves: Move[],
   spent: (number | null)[] = [],
+  startFen: string = START_FEN,
 ): MoveRow[] {
   const rows: MoveRow[] = [];
+  const first = plyAt(startFen, 1).number;
 
   for (const [i, move] of moves.entries()) {
-    const index = Math.floor((move.moveNumber - 1) / 2);
-    const row = (rows[index] ??= { number: index + 1 });
+    const { number, side } = plyAt(startFen, move.moveNumber);
+    const row = (rows[number - first] ??= { number });
     const cell = {
       ply: move.moveNumber,
       san: move.san,
       spentMs: spent[i] ?? null,
     };
 
-    if (move.moveNumber % 2 === 1) row.white = cell;
-    else row.black = cell;
+    row[side] = cell;
   }
 
   return rows;
@@ -70,12 +89,26 @@ export function clampPly(ply: number, total: number): number {
 export function positionAt(
   moves: Move[],
   ply: number,
+  startFen: string = START_FEN,
 ): { fen: string; lastMove: { from: string; to: string } | null } {
   const move = moves[clampPly(ply, moves.length) - 1];
 
   return move
     ? { fen: move.fen, lastMove: { from: move.from, to: move.to } }
-    : { fen: START_FEN, lastMove: null };
+    : { fen: startFen, lastMove: null };
+}
+
+/** `12. Nf3`, `12… Nf6`, or the starting position for ply 0. */
+export function plyLabel(
+  moves: Move[],
+  ply: number,
+  startFen: string = START_FEN,
+): string {
+  const move = moves[ply - 1];
+  if (!move) return "the starting position";
+
+  const { number, side } = plyAt(startFen, ply);
+  return side === "white" ? `${number}. ${move.san}` : `${number}… ${move.san}`;
 }
 
 export type ReviewKey = "first" | "prev" | "next" | "last";
