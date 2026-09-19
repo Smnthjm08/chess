@@ -55,12 +55,15 @@ const ARROW_STEPS: Record<string, number> = {
 export function Board({
   fen,
   orientation = "white",
+  side = orientation,
   selectable = false,
   lastMove,
   onMove,
 }: {
   fen: string;
   orientation?: Orientation;
+  /** The colour whose pieces can be picked up; differs from `orientation` once flipped. */
+  side?: Orientation;
   /** False for spectators, finished games, and while it is not your turn. */
   selectable?: boolean;
   lastMove?: { from: string; to: string } | null;
@@ -110,7 +113,7 @@ export function Board({
   function handleSquare(square: string, piece: string | null) {
     if (!selectable || pending) return;
 
-    const isOwn = piece !== null && colourOf(piece) === orientation;
+    const isOwn = piece !== null && colourOf(piece) === side;
 
     if (selected === null) {
       if (isOwn) setSelected(square);
@@ -161,7 +164,7 @@ export function Board({
           const isLight = (rank + file) % 2 === 0;
           const name = squareName(index, orientation);
 
-          const isOwn = piece !== null && colourOf(piece) === orientation;
+          const isOwn = piece !== null && colourOf(piece) === side;
           const isTarget = targets.has(name);
           const canDrag = selectable && isOwn && !pending;
 
@@ -228,6 +231,7 @@ export function Board({
         <PromotionPicker
           to={pending.to}
           orientation={orientation}
+          side={side}
           onCancel={() => {
             setPending(null);
             setSelected(null);
@@ -250,11 +254,13 @@ export function Board({
 function PromotionPicker({
   to,
   orientation,
+  side,
   onChoose,
   onCancel,
 }: {
   to: string;
   orientation: Orientation;
+  side: Orientation;
   onChoose: (promotion: string) => void;
   onCancel: () => void;
 }) {
@@ -293,7 +299,7 @@ function PromotionPicker({
             onClick={() => onChoose(choice)}
           >
             <Piece
-              piece={orientation === "white" ? choice.toUpperCase() : choice}
+              piece={side === "white" ? choice.toUpperCase() : choice}
               className="size-[90%]"
             />
           </button>

@@ -341,6 +341,10 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
               from: moveResult.from,
               to: moveResult.to,
               promotion: moveResult.promotion ?? null,
+              clockMs:
+                activeTurn === "white"
+                  ? activeClock.whiteTimeMs
+                  : activeClock.blackTimeMs,
             },
           });
 

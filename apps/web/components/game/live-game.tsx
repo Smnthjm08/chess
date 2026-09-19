@@ -8,14 +8,22 @@ import {
   getActiveTurn,
   tryMove,
 } from "@repo/game-core";
+import { ArrowUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Board, type MoveIntent } from "@/components/game/board";
+import { CopyFen } from "@/components/game/copy-fen";
 import { ExportPgn } from "@/components/game/export-pgn";
 import { GameControls, type GameAction } from "@/components/game/game-controls";
 import { GameResultDialog } from "@/components/game/game-result";
 import { GameSeat } from "@/components/game/game-seat";
+import { Button } from "@/components/ui/button";
+import {
+  MoveStrip,
+  MoveTable,
+  ReviewControls,
+} from "@/components/game/move-list";
 import { StatusBadge } from "@/components/game/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,7 +33,6 @@ import {
   type GameDetail,
   type GameResult,
   type GameStatus,
-  type Move,
 } from "@/lib/api";
 import {
   clockAt,
@@ -36,22 +43,15 @@ import {
 } from "@/lib/clock";
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
 import { resultSummary } from "@/lib/result";
+import {
+  positionAt,
+  REVIEW_KEYS,
+  stepPly,
+  timeSpent,
+  toRows,
+  type ReviewKey,
+} from "@/lib/review";
 import { cn } from "@/lib/utils";
-
-/** Pairs the flat move list into numbered white/black rows. */
-function toRows(moves: Move[]) {
-  const rows: { number: number; white?: string; black?: string }[] = [];
-
-  for (const move of moves) {
-    const index = Math.floor((move.moveNumber - 1) / 2);
-    const row = (rows[index] ??= { number: index + 1 });
-
-    if (move.moveNumber % 2 === 1) row.white = move.san;
-    else row.black = move.san;
-  }
-
-  return rows;
-}
 
 function actionMessage(action: GameAction, gameId: string): ClientMessage {
   switch (action) {
@@ -128,35 +128,12 @@ function PlayerRow({
   );
 }
 
-/** One scrolling line of moves, pinned to the latest. */
-function MoveStrip({ rows }: { rows: ReturnType<typeof toRows> }) {
-  const strip = useRef<HTMLOListElement>(null);
-  // Keyed on the ply count, not `rows`: the clock re-renders ten times a second
-  // and would snap the strip back while the player scrolls through it.
-  const plies = rows.length * 2 - (rows.at(-1)?.black ? 0 : 1);
+function plyLabel(moves: GameDetail["moves"], ply: number) {
+  const move = moves[ply - 1];
+  if (!move) return "the starting position";
 
-  useEffect(() => {
-    const node = strip.current;
-    if (node) node.scrollLeft = node.scrollWidth;
-  }, [plies]);
-
-  if (rows.length === 0) return null;
-
-  return (
-    <ol
-      ref={strip}
-      aria-label="Moves"
-      className="flex gap-3 overflow-x-auto font-mono text-sm whitespace-nowrap scrollbar-none"
-    >
-      {rows.map((row) => (
-        <li key={row.number} className="flex gap-1.5">
-          <span className="text-muted-foreground">{row.number}.</span>
-          <span>{row.white}</span>
-          {row.black && <span>{row.black}</span>}
-        </li>
-      ))}
-    </ol>
-  );
+  const number = Math.ceil(ply / 2);
+  return ply % 2 ? `${number}. ${move.san}` : `${number}… ${move.san}`;
 }
 
 export function LiveGame({
@@ -295,13 +272,62 @@ export function LiveGame({
       }
     : initialGame;
 
+  const moves = initialGame.moves;
+  // Null follows the game as it is played; a number pins the board to that ply.
+  const [reviewPly, setReviewPly] = useState<number | null>(null);
+  const reviewing = reviewPly !== null && reviewPly < moves.length;
+  const currentPly = reviewing ? reviewPly : moves.length;
+  const reviewed = reviewing ? positionAt(moves, reviewPly) : null;
+
+  const [flipped, setFlipped] = useState(false);
+
+  const selectPly = useCallback(
+    (ply: number) => setReviewPly(ply >= moves.length ? null : ply),
+    [moves.length],
+  );
+
+  const step = useCallback(
+    (key: ReviewKey) => selectPly(stepPly(key, currentPly, moves.length)),
+    [selectPly, currentPly, moves.length],
+  );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const key = REVIEW_KEYS[event.key];
+      const flip = event.key === "f";
+      const target = event.target as HTMLElement | null;
+
+      // The board claims arrows for its own square cursor.
+      if ((!key && !flip) || event.defaultPrevented) return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+        return;
+      if (target?.closest("input, textarea, select, [contenteditable]")) return;
+
+      event.preventDefault();
+      if (key) step(key);
+      else setFlipped((value) => !value);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [step]);
+
   const fen = optimistic?.fen ?? game.fen;
-  const orientation = state?.role === "black" ? "black" : "white";
+  const seat = state?.role === "black" ? "black" : "white";
+  const orientation = flipped ? (seat === "white" ? "black" : "white") : seat;
   // Read off the displayed position rather than `state.turn`, so an optimistic
   // move hands the move over immediately and the board locks behind it.
   const turn = getActiveTurn(fen);
+  const shownFen = reviewed?.fen ?? fen;
   const live = game.status === "ACTIVE" && !ended;
-  const rows = toRows(initialGame.moves);
+  const rows = useMemo(
+    () =>
+      toRows(
+        moves,
+        timeSpent(moves, initialGame.initialTimeMs, initialGame.incrementMs),
+      ),
+    [moves, initialGame.initialTimeMs, initialGame.incrementMs],
+  );
 
   const finished = game.status === "FINISHED";
 
@@ -312,7 +338,7 @@ export function LiveGame({
 
   // `playedMove` arrives with the broadcast; the move list is refetched, so
   // falling back to it only matters before the first socket move lands.
-  const persisted = initialGame.moves.at(-1);
+  const persisted = moves.at(-1);
   const lastMove =
     optimistic ??
     playedMove ??
@@ -413,18 +439,64 @@ export function LiveGame({
         </div>
 
         <Board
-          fen={fen}
+          fen={shownFen}
           orientation={orientation}
+          side={seat}
           selectable={
-            state?.role === turn && live && status === "open" && !optimistic
+            !reviewing &&
+            state?.role === turn &&
+            live &&
+            status === "open" &&
+            !optimistic
           }
-          lastMove={lastMove}
+          lastMove={reviewed ? reviewed.lastMove : lastMove}
           onMove={handleMove}
         />
 
+        <div className="flex min-h-8 items-center justify-between gap-2 px-1 lg:mt-3">
+          <p className="text-muted-foreground truncate text-xs">
+            {reviewing && (
+              <>
+                Viewing {plyLabel(moves, reviewPly)}
+                {live && (
+                  <>
+                    {" · "}
+                    <button
+                      type="button"
+                      className="text-foreground cursor-pointer underline underline-offset-2"
+                      onClick={() => setReviewPly(null)}
+                    >
+                      back to live
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </p>
+          <div className="flex items-center gap-1">
+            <CopyFen fen={shownFen} />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Flip board"
+              aria-pressed={flipped}
+              title="Flip board (F)"
+              onClick={() => setFlipped((value) => !value)}
+            >
+              <ArrowUpDown />
+            </Button>
+            <ReviewControls
+              current={currentPly}
+              total={moves.length}
+              onStep={step}
+            />
+          </div>
+        </div>
+
         <div className="space-y-3 px-1 lg:hidden">
           {playerRow(orientation)}
-          <MoveStrip rows={rows} />
+          <MoveStrip rows={rows} current={currentPly} onSelect={selectPly} />
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <StatusBadge status={game.status} />
             <span className="font-mono">
@@ -488,17 +560,11 @@ export function LiveGame({
               </p>
             ) : (
               <ScrollArea className="h-64">
-                <ol className="space-y-1 font-mono text-sm">
-                  {rows.map((row) => (
-                    <li key={row.number} className="flex gap-3">
-                      <span className="text-muted-foreground w-6 text-right">
-                        {row.number}.
-                      </span>
-                      <span className="w-16">{row.white}</span>
-                      <span className="w-16">{row.black}</span>
-                    </li>
-                  ))}
-                </ol>
+                <MoveTable
+                  rows={rows}
+                  current={currentPly}
+                  onSelect={selectPly}
+                />
               </ScrollArea>
             )}
           </CardContent>

@@ -135,6 +135,27 @@ describe("increment", () => {
 
     [w, b].forEach((client) => client.close());
   });
+
+  test("each move row records the mover's clock after it", async () => {
+    const { gameId, w, b } = await seatedGame(server, "3+2");
+
+    w.send({ type: "game:move", gameId, data: { from: "e2", to: "e4" } });
+    await w.next("game:state");
+    b.send({ type: "game:move", gameId, data: { from: "e7", to: "e5" } });
+    await b.next("game:state");
+
+    const game = await prisma.game.findUniqueOrThrow({
+      where: { id: gameId },
+      include: { moves: { orderBy: { moveNumber: "asc" } } },
+    });
+
+    expect(game.moves.map((move) => move.clockMs)).toEqual([
+      game.whiteTimeMs,
+      game.blackTimeMs,
+    ]);
+
+    [w, b].forEach((client) => client.close());
+  });
 });
 
 describe("rematch", () => {

@@ -18,6 +18,7 @@ const move = (moveNumber: number, san: string): Move => ({
   from: "",
   to: "",
   promotion: null,
+  clockMs: null,
 });
 
 const game = (overrides: Partial<GameDetail> = {}): GameDetail =>

@@ -75,6 +75,7 @@ export type Move = {
   from: string;
   to: string;
   promotion: string | null;
+  clockMs: number | null;
 };
 
 export type GameDetail = Game & { moves: Move[] };

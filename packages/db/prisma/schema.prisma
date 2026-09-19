@@ -146,6 +146,9 @@ model Move {
   from       String
   to         String
   promotion  String?
+  /// The mover's clock just after this move, increment included. Null on rows
+  /// written before it was recorded.
+  clockMs    Int?
 
   gameId String
   game Game @relation(fields: [gameId], references: [id])
