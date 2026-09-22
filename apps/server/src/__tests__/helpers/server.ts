@@ -3,7 +3,8 @@ import { prisma } from "@repo/db";
 export type TestServer = {
   baseUrl: string;
   wsUrl: string;
-  stop: () => Promise<void>;
+  /** Resolves with the exit code. */
+  stop: (signal?: NodeJS.Signals) => Promise<number>;
 };
 
 /** A port nothing else on the machine is listening on. */
@@ -58,9 +59,9 @@ export async function startTestServer(
         return {
           baseUrl,
           wsUrl: `ws://127.0.0.1:${port}`,
-          stop: async () => {
-            child.kill();
-            await child.exited;
+          stop: async (signal) => {
+            child.kill(signal);
+            return child.exited;
           },
         };
       }

@@ -37,3 +37,10 @@ export function withGameLock<T>(
 
   return run;
 }
+
+/** Resolves once no game has queued or running work, including work queued while waiting. */
+export async function drainGameLocks(): Promise<void> {
+  while (chains.size > 0) {
+    await Promise.all(chains.values());
+  }
+}

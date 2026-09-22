@@ -9,6 +9,7 @@ import { healthRoute } from "./route";
 import { registerSocket } from "./sockets/socket";
 import { sweepExpiredGames } from "./sockets/clock-expiry";
 import { apiRouter } from "./routes";
+import { registerShutdown } from "./shutdown";
 
 const BACKEND_PORT = process.env.BACKEND_PORT ?? 8001;
 
@@ -33,6 +34,7 @@ const server = createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
 registerSocket(wss, server);
+registerShutdown(server, wss);
 
 server.listen(BACKEND_PORT, () => {
   console.log(`server is running on port ${BACKEND_PORT}`);

@@ -72,9 +72,15 @@ export async function joinGame(
 export class TestClient {
   private readonly inbox: ServerFrame[] = [];
   private readonly socket: WebSocket;
+  readonly closed: Promise<{ code: number; reason: string }>;
 
   private constructor(socket: WebSocket) {
     this.socket = socket;
+    this.closed = new Promise((resolve) => {
+      socket.addEventListener("close", ({ code, reason }) =>
+        resolve({ code, reason }),
+      );
+    });
     socket.addEventListener("message", (event) => {
       this.inbox.push(JSON.parse(String(event.data)) as ServerFrame);
     });
