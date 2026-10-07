@@ -48,6 +48,7 @@ import {
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
 import { materialOf, type SideMaterial } from "@/lib/material";
 import { resultSummary } from "@/lib/result";
+import { moveSound, playSound } from "@/lib/sound";
 import {
   plyLabel,
   positionAt,
@@ -392,6 +393,21 @@ export function LiveGame({
   );
 
   const clock = useClock(baseline);
+
+  useEffect(() => {
+    if (playedMove) playSound(moveSound(playedMove.san));
+  }, [playedMove]);
+
+  useEffect(() => {
+    if (finished && !finishedOnArrival.current) playSound("end");
+  }, [finished]);
+
+  const ownClock = role === "white" ? clock.whiteTimeMs : clock.blackTimeMs;
+  const lowTime = playing && live && clockUrgency(ownClock) === "urgent";
+
+  useEffect(() => {
+    if (lowTime) playSound("low-time");
+  }, [lowTime]);
 
   const handleMove = useCallback(
     (move: MoveIntent) => {

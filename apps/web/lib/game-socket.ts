@@ -26,7 +26,7 @@ export type SocketError = { message: string; id: number };
  * consumed as they land.
  */
 /** The move the server last broadcast, for the board's from/to highlight. */
-export type LastMove = { from: string; to: string };
+export type LastMove = { from: string; to: string; san: string };
 
 export type SocketNotice = {
   event:
@@ -171,7 +171,11 @@ export function useGameSocket({
           // position. This frame carries what the position cannot: which
           // squares were played, and the cue to re-read the SAN list.
           case EventType.GAME_MOVE:
-            setLastMove({ from: message.data.from, to: message.data.to });
+            setLastMove({
+              from: message.data.from,
+              to: message.data.to,
+              san: message.data.san,
+            });
             // The server drops a standing offer as soon as a move is played.
             setDrawOffer(null);
             onSyncRef.current?.();
