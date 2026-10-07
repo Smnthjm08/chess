@@ -145,9 +145,9 @@ describe("GET /users/:handle/games", () => {
     const whiteWon = (await (await games(white.id, "?result=won")).json()) as {
       data: unknown[];
     };
-    const whiteLost = (
-      await (await games(white.id, "?result=lost")).json()
-    ) as { data: unknown[] };
+    const whiteLost = (await (
+      await games(white.id, "?result=lost")
+    ).json()) as { data: unknown[] };
     const blackWon = (await (await games(black.id, "?result=won")).json()) as {
       data: unknown[];
     };

@@ -20,13 +20,28 @@ function game(
 
   switch (outcome) {
     case "win":
-      return { ...base, winnerId: ME, result: GameResult.CHECKMATE, ...overrides };
+      return {
+        ...base,
+        winnerId: ME,
+        result: GameResult.CHECKMATE,
+        ...overrides,
+      };
     case "loss":
-      return { ...base, winnerId: THEM, result: GameResult.RESIGNATION, ...overrides };
+      return {
+        ...base,
+        winnerId: THEM,
+        result: GameResult.RESIGNATION,
+        ...overrides,
+      };
     case "draw":
       return { ...base, result: GameResult.DRAW_AGREED, ...overrides };
     case "unplayed":
-      return { ...base, blackId: null, result: GameResult.ABANDONED, ...overrides };
+      return {
+        ...base,
+        blackId: null,
+        result: GameResult.ABANDONED,
+        ...overrides,
+      };
   }
 }
 
@@ -118,7 +133,14 @@ describe("computeStats", () => {
 
   test("the best win streak can be in the past", () => {
     const stats = computeStats(
-      [game("loss"), game("win"), game("win"), game("win"), game("draw"), game("win")],
+      [
+        game("loss"),
+        game("win"),
+        game("win"),
+        game("win"),
+        game("draw"),
+        game("win"),
+      ],
       ME,
     );
 

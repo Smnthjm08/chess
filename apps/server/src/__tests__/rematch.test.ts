@@ -159,7 +159,9 @@ describe("accepting a rematch", () => {
     w.send({ type: "game:rematch:accept", gameId });
     const error = await w.next("game:error");
 
-    expect(error.data?.message).toBe("You cannot accept your own rematch offer");
+    expect(error.data?.message).toBe(
+      "You cannot accept your own rematch offer",
+    );
 
     [w, b].forEach((client) => client.close());
   });

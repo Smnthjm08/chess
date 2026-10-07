@@ -38,6 +38,11 @@ export type SocketNotice = {
   id: number;
 };
 
+export type ChatMessage = Extract<
+  ServerMessage,
+  { type: EventType.GAME_CHAT }
+>["data"];
+
 export type ConnectionStatus =
   "connecting" | "open" | "reconnecting" | "closed";
 
@@ -93,6 +98,9 @@ export function useGameSocket({
   const [rematchGameId, setRematchGameId] = useState<string | null>(null);
 
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
+
+  /** Only ever sent to the two players, and gone on reload. */
+  const [chat, setChat] = useState<ChatMessage[]>([]);
 
   const eventSeq = useRef(0);
 
@@ -221,6 +229,10 @@ export function useGameSocket({
             });
             break;
 
+          case EventType.GAME_CHAT:
+            setChat((messages) => [...messages, message.data]);
+            break;
+
           case EventType.GAME_ERROR:
             setError({ message: message.data.message, id: ++eventSeq.current });
             break;
@@ -290,6 +302,7 @@ export function useGameSocket({
     rematchOffer,
     rematchGameId,
     lastMove,
+    chat,
     send,
   };
 }

@@ -70,10 +70,7 @@ function tally(record: Record3, outcome: Outcome) {
 }
 
 /** `games` are the player's finished games, newest first. */
-export function computeStats(
-  games: StatsGame[],
-  userId: string,
-): ProfileStats {
+export function computeStats(games: StatsGame[], userId: string): ProfileStats {
   const total = empty();
   const byColour = { white: empty(), black: empty() };
   const byCategory = new Map<string, Record3>();

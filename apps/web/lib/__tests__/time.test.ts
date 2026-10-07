@@ -21,7 +21,9 @@ describe("formatRelativeTime", () => {
   });
 
   test("returns '2 min ago' for 2 minutes (user requested format)", () => {
-    expect(formatRelativeTime(BASE_TIME - 120_000, BASE_TIME)).toBe("2 min ago");
+    expect(formatRelativeTime(BASE_TIME - 120_000, BASE_TIME)).toBe(
+      "2 min ago",
+    );
   });
 
   test("returns minutes ago up to an hour", () => {
@@ -34,7 +36,9 @@ describe("formatRelativeTime", () => {
   });
 
   test("returns hours ago", () => {
-    expect(formatRelativeTime(BASE_TIME - 60 * 60_000, BASE_TIME)).toBe("1 hr ago");
+    expect(formatRelativeTime(BASE_TIME - 60 * 60_000, BASE_TIME)).toBe(
+      "1 hr ago",
+    );
     expect(formatRelativeTime(BASE_TIME - 2 * 60 * 60_000, BASE_TIME)).toBe(
       "2 hr ago",
     );

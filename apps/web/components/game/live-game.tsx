@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Board, type MoveIntent } from "@/components/game/board";
+import { Chat } from "@/components/game/chat";
 import { CopyFen } from "@/components/game/copy-fen";
 import { ForkGame } from "@/components/game/fork-game";
 import { ExportPgn } from "@/components/game/export-pgn";
@@ -160,6 +161,7 @@ export function LiveGame({
     rematchOffer,
     rematchGameId,
     lastMove: playedMove,
+    chat,
     send,
   } = useGameSocket({
     gameId: initialGame.id,
@@ -450,6 +452,19 @@ export function LiveGame({
     [send, initialGame.id],
   );
 
+  const handleChat = useCallback(
+    (text: string) => {
+      const sent = send({
+        type: EventType.GAME_CHAT,
+        gameId: initialGame.id,
+        data: { text },
+      });
+
+      if (!sent) toast.error("Not connected — your message was not sent.");
+    },
+    [send, initialGame.id],
+  );
+
   const playerRow = (side: "white" | "black") => (
     <PlayerRow
       label={side === "white" ? "White" : "Black"}
@@ -595,6 +610,16 @@ export function LiveGame({
           onAction={handleAction}
           className="max-lg:order-first"
         />
+
+        {/* The server only sends chat to the two players; nobody else gets the box. */}
+        {playing && viewerId && (
+          <Chat
+            messages={chat}
+            viewerId={viewerId}
+            connected={status === "open"}
+            onSend={handleChat}
+          />
+        )}
 
         <Card className="max-lg:hidden">
           <CardHeader className="flex items-center justify-between">
