@@ -14,6 +14,8 @@ export const ROOK = "r";
 export const QUEEN = "q";
 export const KING = "k";
 
+export const CHAT_MAX_LENGTH = 200;
+
 // starting position (in FEN)
 export const DEFAULT_POSITION = START_FEN;
 

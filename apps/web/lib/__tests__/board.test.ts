@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { START_FEN } from "@repo/game-core";
+import { createEngine, START_FEN, tryMove } from "@repo/game-core";
 import {
   colourOf,
+  movedPieces,
   pieceAsset,
   squareIndex,
   squareName,
@@ -117,5 +118,51 @@ describe("square geometry", () => {
       expect(top).toBeGreaterThanOrEqual(0);
       expect(top + 3).toBeLessThanOrEqual(7);
     }
+  });
+});
+
+describe("movedPieces", () => {
+  const after = (fen: string, ...moves: string[]) => {
+    const engine = createEngine(fen);
+    for (const move of moves) {
+      tryMove(engine, { from: move.slice(0, 2), to: move.slice(2, 4) });
+    }
+    return engine.fen();
+  };
+  const diff = (before: string, afterFen: string) =>
+    movedPieces(toSquares(before), toSquares(afterFen)).map(
+      ([from, to]) => `${squareName(from, "white")}${squareName(to, "white")}`,
+    );
+
+  test("a quiet move", () => {
+    expect(diff(START_FEN, after(START_FEN, "e2e4"))).toEqual(["e2e4"]);
+  });
+
+  test("a capture moves the capturer and drops the captured", () => {
+    const fen = after(START_FEN, "e2e4", "d7d5");
+
+    expect(diff(fen, after(fen, "e4d5"))).toEqual(["e4d5"]);
+  });
+
+  test("castling moves the king and the rook", () => {
+    const fen = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+
+    expect(diff(fen, after(fen, "e1g1")).sort()).toEqual(["e1g1", "h1f1"]);
+  });
+
+  test("stepping back reverses the move", () => {
+    expect(diff(after(START_FEN, "g1f3"), START_FEN)).toEqual(["f3g1"]);
+  });
+
+  test("a promotion has nothing to slide", () => {
+    const fen = "8/4P3/8/8/8/8/8/k6K w - - 0 1";
+    const engine = createEngine(fen);
+    tryMove(engine, { from: "e7", to: "e8", promotion: "q" });
+
+    expect(diff(fen, engine.fen())).toEqual([]);
+  });
+
+  test("the same position moves nothing", () => {
+    expect(diff(START_FEN, START_FEN)).toEqual([]);
   });
 });

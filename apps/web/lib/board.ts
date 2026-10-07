@@ -47,3 +47,32 @@ export function squareIndex(square: string, orientation: Orientation): number {
     ? (rank - 1) * 8 + (7 - file)
     : (8 - rank) * 8 + file;
 }
+
+/**
+ * Pairs each square a piece arrived on with the nearest square the same piece
+ * left, as `[from, to]` indices into `toSquares`. Captured and promoted pieces
+ * have no pair, so they just vanish or appear.
+ */
+export function movedPieces(
+  prev: (string | null)[],
+  next: (string | null)[],
+): [number, number][] {
+  const vacated = prev.flatMap((piece, i) =>
+    piece && piece !== next[i] ? [i] : [],
+  );
+  const distance = (a: number, b: number) =>
+    Math.hypot((a % 8) - (b % 8), Math.floor(a / 8) - Math.floor(b / 8));
+
+  return next.flatMap((piece, to) => {
+    if (!piece || piece === prev[to]) return [];
+
+    const from = vacated
+      .filter((i) => prev[i] === piece)
+      .sort((a, b) => distance(a, to) - distance(b, to))[0];
+
+    if (from === undefined) return [];
+
+    vacated.splice(vacated.indexOf(from), 1);
+    return [[from, to] as [number, number]];
+  });
+}

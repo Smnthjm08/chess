@@ -149,6 +149,21 @@ export class GameSocketManager {
     }
   }
 
+  /** Like `broadcast`, but only to the given users' sockets in this room. */
+  sendToUsers(
+    gameId: string,
+    userIds: (string | null)[],
+    message: ServerMessage,
+  ) {
+    for (const userId of userIds) {
+      if (!userId || !this.isUserInRoom(gameId, userId)) continue;
+
+      const socket = this.userSockets.get(userId);
+
+      if (socket?.readyState === 1 /* OPEN */) sendMessage(socket, message);
+    }
+  }
+
   sendGameState(socket: WebSocket, gameId: string, data: GameStateData) {
     const session = this.sessions.get(socket);
 

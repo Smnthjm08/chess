@@ -1,4 +1,8 @@
-import { EventType, type ClientMessage } from "@repo/game-core";
+import {
+  CHAT_MAX_LENGTH,
+  EventType,
+  type ClientMessage,
+} from "@repo/game-core";
 import z from "zod";
 import { canMatchText } from "../utils/text";
 
@@ -36,4 +40,11 @@ export const clientMessageSchema: z.ZodType<ClientMessage> =
     gameIdOnly(EventType.GAME_REMATCH_OFFER),
     gameIdOnly(EventType.GAME_REMATCH_ACCEPT),
     gameIdOnly(EventType.GAME_REMATCH_DECLINE),
+    z.object({
+      type: z.literal(EventType.GAME_CHAT),
+      gameId,
+      data: z.object({
+        text: z.string().trim().min(1).max(CHAT_MAX_LENGTH),
+      }),
+    }),
   ]);

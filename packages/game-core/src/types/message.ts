@@ -57,6 +57,13 @@ export type ClientMessage =
   | {
       type: EventType.GAME_REMATCH_DECLINE;
       gameId: string;
+    }
+  | {
+      type: EventType.GAME_CHAT;
+      gameId: string;
+      data: {
+        text: string;
+      };
     };
 
 // server -> client
@@ -170,6 +177,16 @@ export type ServerMessage =
       gameId: string;
       data: {
         rematchGameId: string;
+      };
+    }
+  | {
+      type: EventType.GAME_CHAT;
+      gameId: string;
+      data: {
+        userId: string;
+        text: string;
+        /** Epoch ms, stamped by the server. */
+        at: number;
       };
     }
   | {

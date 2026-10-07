@@ -16,6 +16,7 @@ import { scheduleClockExpiry } from "./clock-expiry";
 import { clockTimerStore } from "./timer-store";
 import { drawOfferStore } from "./draw-offer-store";
 import { rematchOfferStore } from "./rematch-offer-store";
+import { chatRateLimit } from "./chat-rate-limit";
 import { createRematch } from "./create-rematch";
 import { finishGame } from "./finish-game";
 import { gameEngineCache } from "./game-engine-cache";
@@ -917,6 +918,43 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         gameId: message.gameId,
         data: { userId },
       });
+      break;
+    }
+
+    // Open in every status, so the players can still talk once it is over.
+    case EventType.GAME_CHAT: {
+      const context = await loadGameForSocket(socket, message.gameId);
+
+      if (!context) return;
+
+      const { userId, game } = context;
+
+      if (userId !== game.whiteId && userId !== game.blackId) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "Spectators cannot chat" },
+        });
+        return;
+      }
+
+      if (!chatRateLimit.allow(userId)) {
+        sendMessage(socket, {
+          type: EventType.GAME_ERROR,
+          data: { message: "You are sending messages too quickly" },
+        });
+        return;
+      }
+
+      // Between the two players only; spectators never see it.
+      gameSocketManager.sendToUsers(
+        message.gameId,
+        [game.whiteId, game.blackId],
+        {
+          type: EventType.GAME_CHAT,
+          gameId: message.gameId,
+          data: { userId, text: message.data.text, at: Date.now() },
+        },
+      );
       break;
     }
   }

@@ -1,10 +1,11 @@
 "use client";
 
 import { getCheckedSquare, getLegalMoves, isPromotion } from "@repo/game-core";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { preload } from "react-dom";
 import {
   colourOf,
+  movedPieces,
   pieceAsset,
   squareIndex,
   squareName,
@@ -34,6 +35,7 @@ function Piece({ piece, className }: { piece: string; className?: string }) {
         "pointer-events-none relative bg-contain bg-center bg-no-repeat",
         className,
       )}
+      data-piece
       style={{ backgroundImage: `url(${pieceAsset(piece)})` }}
     />
   );
@@ -83,6 +85,41 @@ export function Board({
   }, [fen, selectable]);
 
   const squares = useMemo(() => toSquares(fen), [fen]);
+
+  const shown = useRef(squares);
+  const dropped = useRef<number | null>(null);
+
+  // Layout, not passive: the piece has to start from its old square on the
+  // first paint of the new position, not flash at the new one.
+  useLayoutEffect(() => {
+    const prev = shown.current;
+    const skip = dropped.current;
+    shown.current = squares;
+    dropped.current = null;
+
+    if (prev === squares) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const flip = orientation === "black";
+
+    for (const [from, to] of movedPieces(prev, squares)) {
+      // A dragged piece is already where the pointer let go of it.
+      if (to === skip) continue;
+
+      const a = flip ? 63 - from : from;
+      const b = flip ? 63 - to : to;
+      const dx = ((a % 8) - (b % 8)) * 100;
+      const dy = (Math.floor(a / 8) - Math.floor(b / 8)) * 100;
+
+      cells.current[b]?.querySelector("[data-piece]")?.animate(
+        [
+          { transform: `translate(${dx}%, ${dy}%)`, zIndex: 25 },
+          { transform: "none", zIndex: 25 },
+        ],
+        { duration: 200, easing: "ease-out" },
+      );
+    }
+  }, [squares, orientation]);
 
   // Backgrounds are only fetched once styles apply; hoisting them into the
   // document head keeps the pieces from popping in after the board.
@@ -203,7 +240,10 @@ export function Board({
                 const from = dragFrom.current;
                 dragFrom.current = null;
 
-                if (from && targets.has(name)) attempt(from, name);
+                if (from && targets.has(name)) {
+                  dropped.current = squareIndex(name, "white");
+                  attempt(from, name);
+                }
               }}
             >
               {(lastMove?.from === name || lastMove?.to === name) && (

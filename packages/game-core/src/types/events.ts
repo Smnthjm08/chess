@@ -15,5 +15,6 @@ export enum EventType {
   GAME_REMATCH_ACCEPT = "game:rematch:accept",
   GAME_REMATCH_DECLINE = "game:rematch:decline",
   GAME_REMATCH_READY = "game:rematch:ready",
+  GAME_CHAT = "game:chat",
   GAME_ERROR = "game:error",
 }

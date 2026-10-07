@@ -7,6 +7,7 @@ import { sendMessage } from "./send";
 import { EventType } from "@repo/game-core";
 import { getSessionUser, getTicketUser } from "../utils/session";
 import { scheduleAbandonment } from "./abandonment";
+import { chatRateLimit } from "./chat-rate-limit";
 import { startHeartbeat, trackHeartbeat } from "./heartbeat";
 
 function reject(socket: NodeJS.WritableStream & { destroy(): void }) {
@@ -52,6 +53,8 @@ function onConnection(ws: WebSocket, userId: string | null) {
     const session = gameSocketManager.getSession(ws);
 
     gameSocketManager.leaveAllRooms(ws);
+
+    if (session?.userId) chatRateLimit.clear(session.userId);
 
     if (session?.gameId && session.userId) {
       scheduleAbandonment(session.gameId, session.userId);
