@@ -5,6 +5,7 @@ import { LobbyFilters } from "@/components/game/lobby-filters";
 import { LobbyPagination } from "@/components/game/lobby-pagination";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
@@ -75,7 +76,7 @@ export default async function LobbyPage({
       <main className="mx-auto max-w-4xl px-6 py-12">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Lobby</h1>
+            <h1 className="text-display-sm">Lobby</h1>
             <p className="text-muted-foreground text-sm">
               Open a new board or join a game that is waiting for an opponent.
             </p>
@@ -95,13 +96,16 @@ export default async function LobbyPage({
               </EmptyHeader>
             </Empty>
           ) : games.length === 0 ? (
-            <Empty>
+            <Empty className="border">
               <EmptyHeader>
                 <EmptyTitle>{EMPTY_MESSAGE[filter].title}</EmptyTitle>
                 <EmptyDescription>
                   {EMPTY_MESSAGE[filter].body}
                 </EmptyDescription>
               </EmptyHeader>
+              <EmptyContent>
+                <CreateGameButton label="Start a game" />
+              </EmptyContent>
             </Empty>
           ) : (
             <>

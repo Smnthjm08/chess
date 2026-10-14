@@ -154,8 +154,8 @@
 
   /* board squares — the black pieces are black-on-black-outline, so neither
      square may get anywhere near the canvas. */
-  --board-light: var(--surface-elevated);
-  --board-dark: var(--surface-card);
+  --board-light: oklch(0.91 0 0);
+  --board-dark: oklch(0.7 0 0);
   /* legal-move hints — not theme-derived: every square is mid-tone or lighter
      in both palettes, so a dark tint reads on all of them. */
   --board-hint: oklch(0.1448 0 0 / 0.3);
@@ -219,8 +219,8 @@
   --warning: oklch(0.7686 0.1647 70.08); /* #f59e0b */
   --info: oklch(0.6231 0.188 259.81); /* #3b82f6 */
 
-  --board-light: oklch(0.72 0 0); /* #a3a3a3 */
-  --board-dark: oklch(0.56 0 0); /* #747474 */
+  --board-light: oklch(0.76 0 0);
+  --board-dark: oklch(0.5 0 0);
 
   /* semantic mapping */
   --background: var(--canvas);

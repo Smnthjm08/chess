@@ -85,7 +85,7 @@ export function ProfileStatsPanel({ stats }: { stats: ProfileStats }) {
         {TOP_STATS.map(([key, label]) => (
           <Card key={key}>
             <CardContent className="space-y-1">
-              <p className="text-2xl font-semibold tabular-nums">
+              <p className="text-display-sm tabular-nums">
                 {stats[key]}
               </p>
               <p className="text-muted-foreground text-xs">{label}</p>
@@ -97,7 +97,7 @@ export function ProfileStatsPanel({ stats }: { stats: ProfileStats }) {
           <CardContent className="space-y-1">
             <p
               className={cn(
-                "text-2xl font-semibold tabular-nums",
+                "text-display-sm tabular-nums",
                 stats.winRate !== null &&
                   stats.winRate >= 0.5 &&
                   "text-success",

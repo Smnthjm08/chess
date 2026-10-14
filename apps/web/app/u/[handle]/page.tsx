@@ -139,7 +139,7 @@ export default async function ProfilePage({
 
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">
+                <h1 className="text-title-lg">
                   {label}
                 </h1>
                 {user.isAnonymous && <Badge variant="secondary">Guest</Badge>}

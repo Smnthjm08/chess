@@ -32,7 +32,7 @@ export function AuthDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { title, description } = useAuthCopy();
+  const { title, description } = useAuthCopy(defaultMode);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

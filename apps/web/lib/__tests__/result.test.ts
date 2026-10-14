@@ -42,9 +42,11 @@ describe("resultSummary", () => {
       "Checkmate — Alice wins",
     );
     expect(resultSummary(game("b1", "RESIGNATION"))).toBe(
-      "Resignation — Bob wins",
+      "Alice resigned — Bob wins",
     );
-    expect(resultSummary(game("b1", "TIMEOUT"))).toBe("Out of time — Bob wins");
+    expect(resultSummary(game("b1", "TIMEOUT"))).toBe(
+      "Alice ran out of time — Bob wins",
+    );
   });
 
   test("a draw names no winner", () => {

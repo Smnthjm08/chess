@@ -42,12 +42,20 @@ export function resultSummary(
 ): string {
   if (!game.result) return "Game over";
 
-  const reason = RESULT_TEXT[game.result];
+  if (!game.winnerId) return RESULT_TEXT[game.result];
 
-  if (!game.winnerId) return reason;
+  const whiteWon = game.winnerId === game.white?.id;
+  const winner = playerLabel(whiteWon ? game.white : game.black);
+  const loser = playerLabel(whiteWon ? game.black : game.white);
 
-  const winner =
-    game.winnerId === game.white?.id ? game.white : (game.black ?? null);
+  const reason =
+    game.result === "TIMEOUT"
+      ? `${loser} ran out of time`
+      : game.result === "RESIGNATION"
+        ? `${loser} resigned`
+        : game.result === "ABANDONED"
+          ? `${loser} left the game`
+          : RESULT_TEXT[game.result];
 
-  return `${reason} — ${playerLabel(winner)} wins`;
+  return `${reason} — ${winner} wins`;
 }

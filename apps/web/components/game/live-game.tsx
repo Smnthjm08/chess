@@ -32,7 +32,6 @@ import {
 import { StatusBadge } from "@/components/game/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   playerLabel,
   type GameDetail,
@@ -130,8 +129,8 @@ function PlayerRow({
       </div>
       <span
         className={cn(
-          "font-mono text-lg tabular-nums",
-          onMove ? "" : "text-muted-foreground",
+          "rounded-md px-2 py-0.5 font-mono text-2xl tabular-nums",
+          onMove ? "bg-surface-elevated" : "text-muted-foreground",
           live && URGENCY_CLASS[clockUrgency(clock)],
         )}
       >
@@ -481,7 +480,7 @@ export function LiveGame({
       {/* Below lg the clocks sit on the board's edges, and the board is capped
           by the viewport height so both stay on screen. */}
       <div className="mx-auto w-full max-w-[max(18rem,calc(100svh-15rem))] space-y-3 lg:max-w-none lg:space-y-0">
-        <div className="space-y-1 px-1 lg:hidden">
+        <div className="space-y-1 px-1 lg:mb-3">
           <ConnectionNote status={status} />
           {playerRow(orientation === "white" ? "black" : "white")}
         </div>
@@ -557,16 +556,18 @@ export function LiveGame({
           </div>
         </div>
 
-        <div className="space-y-3 px-1 lg:hidden">
+        <div className="space-y-3 px-1 lg:mt-3">
           {playerRow(orientation)}
-          <MoveStrip rows={rows} current={currentPly} onSelect={selectPly} />
-          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <StatusBadge status={game.status} />
-            <span className="font-mono">
-              {formatTimeControl(game.initialTimeMs, game.incrementMs)}
-            </span>
-            {game.result && <span>{resultSummary(game)}</span>}
-            <ExportPgn game={game} className="ml-auto" />
+          <div className="space-y-3 lg:hidden">
+            <MoveStrip rows={rows} current={currentPly} onSelect={selectPly} />
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <StatusBadge status={game.status} />
+              <span className="font-mono">
+                {formatTimeControl(game.initialTimeMs, game.incrementMs)}
+              </span>
+              {game.result && <span>{resultSummary(game)}</span>}
+              <ExportPgn game={game} className="ml-auto" />
+            </div>
           </div>
         </div>
       </div>
@@ -576,7 +577,7 @@ export function LiveGame({
 
         <Card className="max-lg:hidden">
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Players</CardTitle>
+            <CardTitle>Game</CardTitle>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground font-mono text-xs">
                 {formatTimeControl(game.initialTimeMs, game.incrementMs)}
@@ -584,19 +585,13 @@ export function LiveGame({
               <StatusBadge status={game.status} />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {playerRow("black")}
-            <Separator />
-            {playerRow("white")}
-
-            {game.result && (
+          {game.result && (
+            <CardContent>
               <p className="text-muted-foreground text-sm">
                 {resultSummary(game)}
               </p>
-            )}
-
-            <ConnectionNote status={status} />
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
 
         <GameControls

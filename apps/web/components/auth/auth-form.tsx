@@ -25,7 +25,7 @@ export type AuthMode = "signin" | "signup";
  * The heading copy lives outside the form because its container supplies the
  * chrome: `CardHeader` on the auth routes, `DialogHeader` in the dialog.
  */
-export function useAuthCopy() {
+export function useAuthCopy(mode: AuthMode = "signin") {
   const { data: session } = useSession();
   const user = session?.user ?? null;
 
@@ -44,7 +44,7 @@ export function useAuthCopy() {
   }
 
   return {
-    title: "Sign in",
+    title: mode === "signup" ? "Create account" : "Sign in",
     description:
       "A guest account is enough to play — pick a username only if you want the games to stay yours.",
   };

@@ -116,7 +116,7 @@ export function GameSeat({
           <p className="text-muted-foreground text-xs">
             You will join as a guest.{" "}
             <AuthDialog defaultMode="signin">
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+              <Button variant="link" size="sm" className="text-foreground h-auto p-0 text-xs">
                 Sign in
               </Button>
             </AuthDialog>{" "}

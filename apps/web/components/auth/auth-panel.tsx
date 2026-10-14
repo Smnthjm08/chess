@@ -25,7 +25,7 @@ export function AuthPanel({
   next?: string;
 }) {
   const router = useRouter();
-  const { title, description } = useAuthCopy();
+  const { title, description } = useAuthCopy(defaultMode);
 
   return (
     <Card>

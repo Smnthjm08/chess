@@ -247,7 +247,7 @@ export function Board({
               }}
             >
               {(lastMove?.from === name || lastMove?.to === name) && (
-                <span className="bg-primary/20 pointer-events-none absolute inset-0" />
+                <span className="bg-primary/45 pointer-events-none absolute inset-0" />
               )}
 
               {checked === name && (

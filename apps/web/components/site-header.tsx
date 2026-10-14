@@ -52,7 +52,9 @@ function AccountMenu() {
           </Button>
         </AuthDialog>
         <AuthDialog defaultMode="signup">
-          <Button size="sm">Create account</Button>
+          <Button size="sm" variant="outline">
+            Create account
+          </Button>
         </AuthDialog>
       </div>
     );
