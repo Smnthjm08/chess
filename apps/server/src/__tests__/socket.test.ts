@@ -149,6 +149,57 @@ describe("moving", () => {
     [w, b].forEach((client) => client.close());
   });
 
+  test("a draw offer survives the offerer's move and ends at the opponent's", async () => {
+    const { white, gameId, w, b } = await seatedGame(server);
+
+    w.send({ type: "game:draw:offer", gameId });
+    await b.next("game:draw:offer");
+
+    w.send({ type: "game:move", gameId, data: { from: "e2", to: "e4" } });
+    expect((await b.next("game:state")).data?.drawOffer).toBe(white.id);
+
+    b.send({ type: "game:move", gameId, data: { from: "e7", to: "e5" } });
+    expect((await b.next("game:state")).data?.drawOffer).toBeNull();
+
+    [w, b].forEach((client) => client.close());
+  });
+
+  test("repetition counts moves played before the engine was cached", async () => {
+    const { gameId, w, b } = await seatedGame(server);
+    const shuffle = [
+      ["g1", "f3", "Nf3"],
+      ["g8", "f6", "Nf6"],
+      ["f3", "g1", "Ng1"],
+      ["f6", "g8", "Ng8"],
+    ] as const;
+    const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3";
+
+    // As if played before a restart: in the database, not in this process.
+    await prisma.move.createMany({
+      data: shuffle.map(([from, to, san], i) => ({
+        gameId,
+        moveNumber: i + 1,
+        san,
+        fen,
+        from,
+        to,
+        clockMs: 300_000,
+      })),
+    });
+    await prisma.game.update({ where: { id: gameId }, data: { fen } });
+
+    let state;
+
+    for (const [i, [from, to]] of shuffle.entries()) {
+      (i % 2 ? b : w).send({ type: "game:move", gameId, data: { from, to } });
+      state = await w.next("game:state");
+    }
+
+    expect(state?.data?.result).toBe("THREEFOLD_REPETITION");
+
+    [w, b].forEach((client) => client.close());
+  });
+
   test("an illegal move is rejected and changes nothing", async () => {
     const { gameId, w, b } = await seatedGame(server);
 

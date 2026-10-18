@@ -296,7 +296,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
             : game.blackTimeMs,
       };
 
-      const engine = gameEngineCache.getOrHydrate(message.gameId, game.fen);
+      const engine = await gameEngineCache.getOrHydrate(game);
       const moveResult = tryMove(engine, message.data);
 
       if (!moveResult) {
@@ -388,8 +388,11 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         return;
       }
 
-      // A move supersedes any offer that was standing when it was played.
-      drawOfferStore.clear(message.gameId);
+      // Playing on is the opponent's answer to an offer; the offerer's own
+      // move leaves it standing, so "offer, then move" works.
+      if (drawOfferStore.get(message.gameId) !== userId) {
+        drawOfferStore.clear(message.gameId);
+      }
 
       if (outcome.isGameOver) {
         gameEngineCache.evict(message.gameId);

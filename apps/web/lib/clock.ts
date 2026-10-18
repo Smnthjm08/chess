@@ -48,9 +48,16 @@ export function clockAt(baseline: ClockBaseline, at: number) {
  * and until it says so the game is still running.
  */
 export function useClock(baseline: ClockBaseline) {
-  const [at, setAt] = useState(baseline.anchor);
+  // Initialise to the current wall-clock time so the very first render
+  // already shows an accurate value instead of snapping forward once the
+  // effect fires. Re-initialising on each baseline change also prevents the
+  // brief backward jump that happened when a new baseline (e.g. after a move)
+  // reset the state to the stale anchor timestamp.
+  const [at, setAt] = useState(() => Date.now());
 
   useEffect(() => {
+    // Sync immediately whenever the baseline is replaced so there is no
+    // visible gap between the effect cleanup and the first tick.
     setAt(Date.now());
 
     if (!baseline.running) return;

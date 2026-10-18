@@ -187,6 +187,12 @@ export function SiteHeader() {
           >
             Lobby
           </Link>
+          <Link
+            href="/practice"
+            className="hover:text-foreground transition-colors"
+          >
+            Practice
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-1">

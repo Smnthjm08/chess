@@ -5,7 +5,6 @@ import express from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { auth, toNodeHandler, WEB_ORIGIN } from "@repo/auth";
-import { healthRoute } from "./route";
 import { registerSocket } from "./sockets/socket";
 import { sweepExpiredGames } from "./sockets/clock-expiry";
 import { apiRouter } from "./routes";
@@ -25,7 +24,9 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/health", healthRoute);
+app.get("/health", (_req, res) => {
+  res.json({ message: "hello" });
+});
 
 app.use("/api/v1", apiRouter);
 

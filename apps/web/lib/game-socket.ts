@@ -184,8 +184,8 @@ export function useGameSocket({
               to: message.data.to,
               san: message.data.san,
             });
-            // The server drops a standing offer as soon as a move is played.
-            setDrawOffer(null);
+            // Whether the move cleared a standing offer depends on who played
+            // it; the `game:state` that follows carries the answer.
             onSyncRef.current?.();
             break;
 
