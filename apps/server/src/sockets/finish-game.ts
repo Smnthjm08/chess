@@ -65,6 +65,7 @@ export async function finishGame({
     turn: getActiveTurn(game.fen),
     result: game.result,
     winnerId: game.winnerId,
+    clockRunning: false,
   });
 
   return game;

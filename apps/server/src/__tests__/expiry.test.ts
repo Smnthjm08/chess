@@ -8,7 +8,13 @@ import {
 } from "bun:test";
 import { GameStatus, prisma } from "@repo/db";
 import { START_FEN } from "@repo/game-core";
-import { seatedGame, signInAsGuest, TestClient } from "./helpers/client";
+import {
+  createGame,
+  joinGame,
+  seatedGame,
+  signInAsGuest,
+  TestClient,
+} from "./helpers/client";
 import {
   resetDatabase,
   startTestServer,
@@ -163,6 +169,22 @@ describe("abandonment", () => {
     expect(stored.winnerId).not.toBe(black.id);
 
     w.close();
+  });
+
+  test("a player to move who never arrives forfeits", async () => {
+    const white = await signInAsGuest(server);
+    const black = await signInAsGuest(server);
+    const gameId = await createGame(server, white);
+
+    await joinGame(server, black, gameId);
+    await Bun.sleep(GRACE_MS + 600);
+
+    const stored = await prisma.game.findUniqueOrThrow({
+      where: { id: gameId },
+    });
+
+    expect(stored.result).toBe("ABANDONED");
+    expect(stored.winnerId).toBe(black.id);
   });
 
   test("reconnecting inside the grace period saves the game", async () => {

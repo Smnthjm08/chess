@@ -1,12 +1,14 @@
 import { GameStatus, prisma } from "@repo/db";
-import { scheduleClockExpiry } from "./clock-expiry";
+import { getActiveTurn } from "@repo/game-core";
+import { scheduleAbandonment } from "./abandonment";
 
 /**
- * A rematch is born seated and running: both players are already known, so it
- * skips the WAITING phase and the second-seat claim that normally starts the
- * clock. Colours swap, the time control carries over, and both clocks start
- * full rather than from whatever was left on them. A rematch of a fork replays
- * the fork's starting position.
+ * A rematch is born seated and active: both players are already known, so it
+ * skips the WAITING phase. Its room is empty until they arrive, so the clock
+ * waits for the player to move's `game:join`, and a no-show forfeits on the
+ * abandonment grace. Colours swap, the time control carries over, and both
+ * clocks start full rather than from whatever was left on them. A rematch of a
+ * fork replays the fork's starting position.
  *
  * No state is broadcast — the new room is empty until the clients arrive and
  * send `game:join` for themselves.
@@ -29,11 +31,13 @@ export async function createRematch(previous: {
       incrementMs: previous.incrementMs,
       whiteTimeMs: previous.initialTimeMs,
       blackTimeMs: previous.initialTimeMs,
-      lastMoveAt: new Date(),
     },
   });
 
-  scheduleClockExpiry(game);
+  scheduleAbandonment(
+    game.id,
+    getActiveTurn(game.fen) === "white" ? previous.blackId : previous.whiteId,
+  );
 
   return game;
 }

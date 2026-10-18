@@ -149,7 +149,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         }
       }
 
-      const game = await prisma.game.findUnique({
+      let game = await prisma.game.findUnique({
         where: { id: message.gameId },
       });
 
@@ -161,28 +161,29 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         return;
       }
 
-      const otherActiveGame =
-        userId &&
-        (await prisma.game.findFirst({
-          where: {
-            status: GameStatus.ACTIVE,
-            id: { not: message.gameId },
-            OR: [{ whiteId: userId }, { blackId: userId }],
-          },
-        }));
-
-      if (otherActiveGame) {
-        sendMessage(socket, {
-          type: EventType.GAME_ERROR,
-          data: { message: "You are already in another active game" },
-        });
-        return;
-      }
-
+      // Watching is open to anyone; holding one active game at a time is
+      // enforced where seats are taken.
       gameSocketManager.joinRoom(message.gameId, socket);
       if (userId) cancelAbandonment(message.gameId, userId);
 
       const activeTurn = getActiveTurn(game.fen);
+
+      // A started game whose clock is waiting for the player to move
+      // (`claimSeat`, `createRematch`) starts it the moment they arrive, and
+      // everyone in the room has to hear that it is now running.
+      const starting =
+        game.status === GameStatus.ACTIVE &&
+        !game.lastMoveAt &&
+        userId !== undefined &&
+        userId === (activeTurn === "white" ? game.whiteId : game.blackId);
+
+      if (starting) {
+        game = await prisma.game.update({
+          where: { id: game.id },
+          data: { lastMoveAt: new Date() },
+        });
+        scheduleClockExpiry(game);
+      }
 
       // The stored clock is only true as of `lastMoveAt`. Every other
       // `game:state` is sent the instant it becomes true, but a join lands
@@ -190,7 +191,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
       // a reconnecting client ticks down from a number that is already spent.
       const running = remainingMs(game);
 
-      gameSocketManager.sendGameState(socket, message.gameId, {
+      const state = {
         fen: game.fen,
         whiteId: game.whiteId,
         blackId: game.blackId,
@@ -206,7 +207,14 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         turn: activeTurn,
         result: game.result,
         winnerId: game.winnerId,
-      });
+        clockRunning: running !== null,
+      };
+
+      if (starting) {
+        gameSocketManager.broadcastGameState(message.gameId, state);
+      } else {
+        gameSocketManager.sendGameState(socket, message.gameId, state);
+      }
 
       if (userId) {
         gameSocketManager.broadcast(
@@ -434,6 +442,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         turn: nextTurn,
         result: outcome.isGameOver ? outcome.result : null,
         winnerId,
+        clockRunning: !outcome.isGameOver,
       });
 
       break;
@@ -520,6 +529,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         turn: getActiveTurn(updatedGame.fen),
         result: updatedGame.result,
         winnerId: updatedGame.winnerId,
+        clockRunning: false,
       });
       break;
     }
@@ -581,6 +591,7 @@ async function dispatch(socket: WebSocket, message: ClientMessage) {
         turn: activeTurn,
         result: resumedGame.result,
         winnerId: resumedGame.winnerId,
+        clockRunning: true,
       });
       break;
     }

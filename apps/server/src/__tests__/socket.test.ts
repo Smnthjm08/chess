@@ -53,6 +53,42 @@ describe("joining", () => {
     [w, b].forEach((client) => client.close());
   });
 
+  test("the clock waits for the player to move to arrive", async () => {
+    const white = await signInAsGuest(server);
+    const black = await signInAsGuest(server);
+    const gameId = await createGame(server, white);
+
+    const b = await TestClient.connect(server, black);
+    await joinGame(server, black, gameId);
+    b.send({ type: "game:join", gameId });
+    expect((await b.next("game:state")).data?.clockRunning).toBe(false);
+
+    const w = await TestClient.connect(server, white);
+    w.send({ type: "game:join", gameId });
+
+    expect((await b.next("game:state")).data?.clockRunning).toBe(true);
+
+    const stored = await prisma.game.findUniqueOrThrow({
+      where: { id: gameId },
+    });
+    expect(stored.lastMoveAt).not.toBeNull();
+
+    [w, b].forEach((client) => client.close());
+  });
+
+  test("a player in an active game can still watch another", async () => {
+    const mine = await seatedGame(server);
+    const theirs = await seatedGame(server);
+
+    mine.w.send({ type: "game:join", gameId: theirs.gameId });
+    const state = await mine.w.next("game:state");
+
+    expect(state.gameId).toBe(theirs.gameId);
+    expect(state.data?.role).toBe("spectator");
+
+    [mine.w, mine.b, theirs.w, theirs.b].forEach((client) => client.close());
+  });
+
   test("a third party joins as a spectator", async () => {
     const { gameId, w, b } = await seatedGame(server);
     const watcher = await signInAsGuest(server);

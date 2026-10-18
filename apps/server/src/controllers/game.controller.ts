@@ -9,6 +9,8 @@ import {
 } from "@repo/game-core";
 import type { Request, Response } from "express";
 import { type Game, GameStatus, prisma } from "@repo/db";
+import { scheduleAbandonment } from "../sockets/abandonment";
+import { remainingMs } from "../sockets/clock";
 import { scheduleClockExpiry } from "../sockets/clock-expiry";
 import { gameSocketManager } from "../sockets/game-socket";
 import { withGameLock } from "../sockets/game-lock";
@@ -120,10 +122,19 @@ function claimSeat(gameId: string, userId: string): Promise<SeatResult> {
 
       if (!role) return { status: "full" } as const;
 
-      // Filling the second seat is what starts the game and its clock. That
-      // is usually black's, but a fork seats its creator on the side to move.
-      const start = (role === "white" ? game.blackId : game.whiteId)
-        ? { status: GameStatus.ACTIVE, lastMoveAt: new Date() }
+      // Filling the second seat is what starts the game. That is usually
+      // black's, but a fork seats its creator on the side to move. The clock
+      // only starts if whoever is to move is here to see it; otherwise it waits
+      // for their `game:join`, and the abandonment grace covers a no-show.
+      const opponentId = role === "white" ? game.blackId : game.whiteId;
+      const moverId = getActiveTurn(game.fen) === role ? userId : opponentId;
+      const moverHere =
+        moverId !== null && gameSocketManager.isUserInRoom(gameId, moverId);
+      const start = opponentId
+        ? {
+            status: GameStatus.ACTIVE,
+            lastMoveAt: moverHere ? new Date() : null,
+          }
         : {};
 
       const { count } =
@@ -145,6 +156,8 @@ function claimSeat(gameId: string, userId: string): Promise<SeatResult> {
       });
 
       scheduleClockExpiry(seated);
+      if (opponentId && moverId && !moverHere)
+        scheduleAbandonment(gameId, moverId);
 
       gameSocketManager.broadcastGameState(gameId, {
         fen: seated.fen,
@@ -156,6 +169,7 @@ function claimSeat(gameId: string, userId: string): Promise<SeatResult> {
         turn: getActiveTurn(seated.fen),
         result: seated.result,
         winnerId: seated.winnerId,
+        clockRunning: remainingMs(seated) !== null,
       });
 
       return { status: "ok", game: seated, role } as const;

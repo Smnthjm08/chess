@@ -16,6 +16,9 @@ export const KING = "k";
 
 export const CHAT_MAX_LENGTH = 200;
 
+/** How long a player who is not connected has before they forfeit. */
+export const ABANDON_GRACE_MS = 60_000;
+
 // starting position (in FEN)
 export const DEFAULT_POSITION = START_FEN;
 

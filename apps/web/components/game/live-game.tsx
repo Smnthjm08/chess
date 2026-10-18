@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ABANDON_GRACE_MS,
   type ClientMessage,
   createEngine,
   EventType,
@@ -8,6 +9,7 @@ import {
   getActiveTurn,
   getOutcome,
   tryMove,
+  type Turn,
 } from "@repo/game-core";
 import { ArrowUpDown } from "lucide-react";
 import Link from "next/link";
@@ -95,6 +97,8 @@ function ConnectionNote({ status }: { status: ConnectionStatus }) {
   );
 }
 
+const TURNS = ["white", "black"] as const;
+
 const URGENCY_CLASS = {
   urgent: "text-destructive",
   low: "text-warning",
@@ -160,6 +164,7 @@ export function LiveGame({
     rematchOffer,
     rematchGameId,
     lastMove: playedMove,
+    away,
     chat,
     send,
   } = useGameSocket({
@@ -362,6 +367,12 @@ export function LiveGame({
     playedMove ??
     (persisted ? { from: persisted.from, to: persisted.to } : null);
 
+  // An active game's clock can still be waiting for the player to move to
+  // arrive; until then nothing is being spent.
+  const clockRunning = state
+    ? state.clockRunning
+    : initialGame.status === "ACTIVE" && initialGame.lastMoveAt !== null;
+
   // Anchored on the values themselves rather than the message, so a state that
   // repeats the clock keeps counting from its first reading instead of quietly
   // handing back the milliseconds already spent.
@@ -370,10 +381,10 @@ export function LiveGame({
       whiteTimeMs: game.whiteTimeMs,
       blackTimeMs: game.blackTimeMs,
       turn: getActiveTurn(game.fen),
-      running: game.status === "ACTIVE",
+      running: clockRunning,
       anchor: Date.now(),
     }),
-    [game.whiteTimeMs, game.blackTimeMs, game.fen, game.status],
+    [game.whiteTimeMs, game.blackTimeMs, game.fen, clockRunning],
   );
 
   // An optimistic move presses the clock locally too — otherwise the mover's
@@ -395,9 +406,44 @@ export function LiveGame({
 
   const clock = useClock(baseline);
 
+  const inProgress =
+    (game.status === "ACTIVE" || game.status === "PAUSED") && !ended;
+  const seatOf = (side: Turn) =>
+    side === "white" ? game.whiteId : game.blackId;
+
+  // A player who dropped out forfeits when the server's grace runs out, so
+  // that deadline is counted down where everyone can see it.
+  const awaySide = inProgress
+    ? (TURNS.find((side) => {
+        const id = seatOf(side);
+        return id !== null && id !== viewerId && away[id] !== undefined;
+      }) ?? null)
+    : null;
+  const awaySince = awaySide ? away[seatOf(awaySide)!] : undefined;
+  const forfeitBaseline = useMemo<ClockBaseline>(
+    () => ({
+      whiteTimeMs: ABANDON_GRACE_MS,
+      blackTimeMs: 0,
+      turn: "white",
+      running: awaySince !== undefined,
+      anchor: awaySince ?? 0,
+    }),
+    [awaySince],
+  );
+  const forfeitInMs = useClock(forfeitBaseline).whiteTimeMs;
+
+  // The player to move has not arrived, which is why no clock is running.
+  const waitingFor =
+    state && game.status === "ACTIVE" && !clockRunning && !ended ? turn : null;
+
+  // Your own move played its sound the moment you made it.
   useEffect(() => {
-    if (playedMove) playSound(moveSound(playedMove.san));
-  }, [playedMove]);
+    if (!playedMove) return;
+
+    const mover = getActiveTurn(playedMove.fen) === "white" ? "black" : "white";
+
+    if (mover !== role) playSound(moveSound(playedMove.san));
+  }, [playedMove, role]);
 
   useEffect(() => {
     if (finished && !finishedOnArrival.current) playSound("end");
@@ -428,6 +474,8 @@ export function LiveGame({
         toast.error("Not connected — your move was not sent.");
         return;
       }
+
+      playSound(moveSound(result.san));
 
       const at = Date.now();
 
@@ -482,6 +530,22 @@ export function LiveGame({
       <div className="mx-auto w-full max-w-[max(18rem,calc(100svh-15rem))] space-y-3 lg:max-w-none lg:space-y-0">
         <div className="space-y-1 px-1 lg:mb-3">
           <ConnectionNote status={status} />
+          {awaySide ? (
+            <p className="text-xs" aria-live="polite">
+              {playerLabel(game[awaySide])} disconnected — forfeits in{" "}
+              <span className="font-mono tabular-nums">
+                {formatClock(forfeitInMs)}
+              </span>{" "}
+              unless they return.
+            </p>
+          ) : (
+            waitingFor && (
+              <p className="text-muted-foreground text-xs">
+                Waiting for {playerLabel(game[waitingFor])} — the clock starts
+                when they arrive.
+              </p>
+            )
+          )}
           {playerRow(orientation === "white" ? "black" : "white")}
         </div>
 

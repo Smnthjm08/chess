@@ -1,10 +1,9 @@
 import { GameResult, GameStatus, prisma } from "@repo/db";
+import { ABANDON_GRACE_MS as DEFAULT_ABANDON_GRACE_MS } from "@repo/game-core";
 import { abandonTimerStore } from "./timer-store";
 import { finishGame } from "./finish-game";
 import { gameSocketManager } from "./game-socket";
 import { withGameLock } from "./game-lock";
-
-const DEFAULT_ABANDON_GRACE_MS = 60_000;
 
 /**
  * How long a disconnected player has to come back before they forfeit. Fixed

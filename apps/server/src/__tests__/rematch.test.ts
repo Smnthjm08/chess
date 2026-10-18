@@ -144,8 +144,8 @@ describe("accepting a rematch", () => {
     expect(rematch.whiteId).toBe(black.id);
     expect(rematch.blackId).toBe(white.id);
     expect(rematch.status).toBe(GameStatus.ACTIVE);
-    // Seated and running, so the clock is already armed.
-    expect(rematch.lastMoveAt).not.toBeNull();
+    // Nobody is in the new room yet, so the clock waits for white to arrive.
+    expect(rematch.lastMoveAt).toBeNull();
 
     [w, b].forEach((client) => client.close());
   });

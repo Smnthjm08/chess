@@ -176,7 +176,36 @@ export function SiteHeader() {
   return (
     <header className="border-hairline border-b">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
-        <Link href="/" className="text-title-sm font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="text-title-sm flex items-center gap-2 font-semibold tracking-tight"
+        >
+          <svg viewBox="0 0 32 32" className="size-6" aria-hidden="true">
+            <rect
+              x="2"
+              y="2"
+              width="13"
+              height="13"
+              rx="2.5"
+              fill="currentColor"
+            />
+            <rect
+              x="17"
+              y="17"
+              width="13"
+              height="13"
+              rx="2.5"
+              fill="currentColor"
+            />
+            <rect
+              x="2"
+              y="17"
+              width="13"
+              height="13"
+              rx="2.5"
+              className="fill-primary"
+            />
+          </svg>
           Chess
         </Link>
 

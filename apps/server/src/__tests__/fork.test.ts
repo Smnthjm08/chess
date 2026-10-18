@@ -136,12 +136,13 @@ describe("forking a finished game", () => {
 
     const game = await prisma.game.findUniqueOrThrow({ where: { id } });
     expect(game.status).toBe(GameStatus.ACTIVE);
-    expect(game.lastMoveAt).not.toBeNull();
+    // The creator, to move, is not connected yet, so their clock waits.
+    expect(game.lastMoveAt).toBeNull();
 
     // And the creator, on black, is the one who can move.
     const b = await TestClient.connect(server, creator);
     b.send({ type: "game:join", gameId: id });
-    await b.next("game:state");
+    expect((await b.next("game:state")).data?.clockRunning).toBe(true);
     b.drain();
 
     b.send({ type: "game:move", gameId: id, data: { from: "g8", to: "f6" } });

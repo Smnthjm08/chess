@@ -96,6 +96,8 @@ export type ServerMessage =
         // `GameResult` name, null until the game ends.
         result: string | null;
         winnerId: string | null;
+        /** False until the player to move has arrived, and while paused or over. */
+        clockRunning: boolean;
         role: GameRole;
         /** The player whose draw offer is standing, or null. */
         drawOffer: string | null;

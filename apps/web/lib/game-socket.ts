@@ -26,7 +26,7 @@ export type SocketError = { message: string; id: number };
  * consumed as they land.
  */
 /** The move the server last broadcast, for the board's from/to highlight. */
-export type LastMove = { from: string; to: string; san: string };
+export type LastMove = { from: string; to: string; san: string; fen: string };
 
 export type SocketNotice = {
   event:
@@ -98,6 +98,9 @@ export function useGameSocket({
   const [rematchGameId, setRematchGameId] = useState<string | null>(null);
 
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
+
+  /** When each user who left the room went, until they come back. */
+  const [away, setAway] = useState<Record<string, number>>({});
 
   /** Only ever sent to the two players, and gone on reload. */
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -183,16 +186,34 @@ export function useGameSocket({
               from: message.data.from,
               to: message.data.to,
               san: message.data.san,
+              fen: message.data.fen,
             });
             // Whether the move cleared a standing offer depends on who played
             // it; the `game:state` that follows carries the answer.
             onSyncRef.current?.();
             break;
 
-          case EventType.GAME_JOIN:
-          case EventType.GAME_LEAVE:
+          case EventType.GAME_JOIN: {
+            const userId = message.data?.userId;
+
+            if (userId) {
+              setAway((gone) => {
+                const next = { ...gone };
+                delete next[userId];
+                return next;
+              });
+            }
             onSyncRef.current?.();
             break;
+          }
+
+          case EventType.GAME_LEAVE: {
+            const userId = message.data?.userId;
+
+            if (userId) setAway((gone) => ({ ...gone, [userId]: Date.now() }));
+            onSyncRef.current?.();
+            break;
+          }
 
           case EventType.GAME_DRAW_OFFER:
             setDrawOffer(message.data.userId);
@@ -302,6 +323,7 @@ export function useGameSocket({
     rematchOffer,
     rematchGameId,
     lastMove,
+    away,
     chat,
     send,
   };
