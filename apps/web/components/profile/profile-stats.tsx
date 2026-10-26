@@ -85,9 +85,7 @@ export function ProfileStatsPanel({ stats }: { stats: ProfileStats }) {
         {TOP_STATS.map(([key, label]) => (
           <Card key={key}>
             <CardContent className="space-y-1">
-              <p className="text-display-sm tabular-nums">
-                {stats[key]}
-              </p>
+              <p className="text-display-sm tabular-nums">{stats[key]}</p>
               <p className="text-muted-foreground text-xs">{label}</p>
             </CardContent>
           </Card>

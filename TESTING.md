@@ -55,41 +55,7 @@ only coverage the client layer has. Run it after anything that touches
 Two players: one normal window, one incognito (separate guest sessions).
 Create a game in the first, open the invite link in the second.
 
-**Board input**
-
-- [ ] Click an own piece to select, a legal target to move; clicking empty space deselects; clicking another own piece re-selects.
-- [ ] Legal-move hints appear — dot on empty squares, ring on captures.
-- [ ] Clicking an illegal target does nothing (no message sent, selection kept or cleared, not a server error).
-- [ ] Drag-and-drop moves work as the second input path.
-- [ ] Last move's from/to stay highlighted.
-- [ ] The king's square highlights when in check.
-- [ ] Promotion: the picker opens over the target square and **nothing is sent until a piece is chosen** — cancelling sends no move.
-- [ ] Keyboard: tab to a square, arrow keys move focus, Enter/Space selects.
-
-**Clocks**
-
-- [ ] The side on move ticks down; the idle side holds.
-- [ ] Tenths show under 10s, the colour changes under 30s.
-- [ ] A local clock clamps at 0:00 and waits — the server decides the flag fall, not the client.
-- [ ] Clocks snap to each `game:state` rather than drifting (watch across several moves).
-
-**Controls and result**
-
-- [ ] Resign asks for confirmation, and the loser's screen updates.
-- [ ] Offer draw is disabled while your own offer is pending.
-- [ ] The opponent gets an Accept/Decline prompt; declining shows the offerer "your offer was declined".
-- [ ] Pause only appears for the player on move; Resume only for the opponent. Neither should ever be offered when the server would refuse it.
-- [ ] On checkmate the result dialog names the right outcome (won / lost / draw) and "Back to lobby" works.
-- [ ] A finished game, a spectator's view, and "not your turn" all leave the board non-interactive.
-
-**Lobby**
-
-- [ ] The lobby opens on Waiting, not on every game ever played.
-- [ ] Each tab shows only its own games; a paused game appears under "In progress", not just "All".
-- [ ] Paging keeps the tab you are on, and Previous/Next disable at the ends.
-- [ ] Each tab's empty state reads correctly for that tab.
-
-**Profiles**
+### Profiles
 
 - [ ] Played / wins / losses / draws / win rate on a profile match the games
       listed under it; a player with no finished games shows a `—` win rate,
@@ -105,14 +71,7 @@ Create a game in the first, open the invite link in the second.
       on the profile — not played, not a loss.
 - [ ] A guest's profile (addressed by id, no `@username`) shows the same stats.
 
-**Time controls**
-
-- [ ] "New game" offers 1+0, 3+2, 5+0, 10+0; picking one starts a game with those clocks.
-- [ ] The control shows on the game page and on lobby rows.
-- [ ] In a 3+2 game, your clock goes _up_ after you move; in 5+0 it only counts down.
-- [ ] A 1+0 bullet game is playable — tenths appear for most of it and the display stays readable.
-
-**PGN export**
+### PGN export
 
 - [ ] The Moves card header has a PGN button; on a narrow screen it sits in the
       status row under the board.
@@ -123,7 +82,7 @@ Create a game in the first, open the invite link in the second.
 - [ ] Open the download in a real board (Lichess "import game" or similar) and
       confirm it replays to the same final position.
 
-**Game review**
+### Game review
 
 - [ ] Clicking a move in the Moves card (or the strip under the board on a
       narrow screen) shows that position, with its from/to squares highlighted.
@@ -149,7 +108,7 @@ Create a game in the first, open the invite link in the second.
 - [ ] On a phone the captures sit beside the name without making the rows
       above and below the board taller.
 
-**Fork**
+### Fork
 
 - [ ] The fork button only shows on finished games, and is disabled on a
       checkmate or stalemate position.
@@ -164,7 +123,7 @@ Create a game in the first, open the invite link in the second.
       right position.
 - [ ] A rematch of a finished fork starts from the fork's position again.
 
-**Rematch**
+### Rematch
 
 - [ ] After a finished game both players see a Rematch card; the result dialog also offers one.
 - [ ] Offering shows "Rematch offered" and disables the button; the opponent sees the prompt.
@@ -173,15 +132,7 @@ Create a game in the first, open the invite link in the second.
 - [ ] Reload while an offer stands — it is still there (`game:state` carries it).
 - [ ] A spectator sees no rematch UI and is not navigated anywhere when the players rematch.
 
-**Sounds and animation**
-
-- [ ] Moves, captures and checks each sound different; a game ending plays the end sound once, and opening an already-finished game plays nothing.
-- [ ] Your own clock dropping under 10s plays the low-time warning once.
-- [ ] Pieces slide on every move, including the rook when castling; stepping back through the review slides them back.
-- [ ] A dragged piece does not slide back from where it was picked up.
-- [ ] With the OS "reduce motion" setting on, nothing slides.
-
-**Chat**
+### Chat
 
 Add a third window, signed in as a different guest, watching as a spectator.
 
