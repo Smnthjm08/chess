@@ -15,20 +15,14 @@ import { scheduleClockExpiry } from "../sockets/clock-expiry";
 import { gameSocketManager } from "../sockets/game-socket";
 import { withGameLock } from "../sockets/game-lock";
 import { playerSelect } from "../utils/player-select";
+import { refuse, refuseInternal } from "../utils/refuse";
 import { canMatchText } from "../utils/text";
 
 export const createGame = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized",
-        data: null,
-        message: "Unauthorized",
-      });
-    }
+    if (!userId) return refuse(res, 401, "Unauthorized");
 
     const existingActiveGame = await prisma.game.findFirst({
       where: {
@@ -38,11 +32,8 @@ export const createGame = async (req: Request, res: Response) => {
     });
 
     if (existingActiveGame) {
-      return res.status(400).json({
-        success: false,
-        error: "You are already in an active game",
-        data: { activeGameId: existingActiveGame.id },
-        message: "Single active game constraint violation",
+      return refuse(res, 400, "You are already in an active game", {
+        activeGameId: existingActiveGame.id,
       });
     }
 
@@ -51,11 +42,8 @@ export const createGame = async (req: Request, res: Response) => {
     };
 
     if (!isTimeControlKey(timeControl)) {
-      return res.status(400).json({
-        success: false,
-        error: `Unknown time control: ${String(timeControl)}`,
-        data: { allowed: Object.keys(TIME_CONTROLS) },
-        message: "Invalid time control",
+      return refuse(res, 400, `Unknown time control: ${String(timeControl)}`, {
+        allowed: Object.keys(TIME_CONTROLS),
       });
     }
 
@@ -82,12 +70,7 @@ export const createGame = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error creating game", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };
 
@@ -185,34 +168,12 @@ export const joinGame = async (req: Request, res: Response) => {
     const rawGameId = req.params.gameId;
     const gameId = Array.isArray(rawGameId) ? rawGameId[0] : rawGameId;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized",
-        data: null,
-        message: "Unauthorized",
-      });
-    }
-
-    if (!gameId) {
-      return res.status(400).json({
-        success: false,
-        error: "Game ID is required",
-        data: null,
-        message: "Invalid game ID",
-      });
-    }
+    if (!userId) return refuse(res, 401, "Unauthorized");
+    if (!gameId) return refuse(res, 400, "Game ID is required");
 
     // Ahead of the active-game check, whose `id: { not: gameId }` would carry
     // the NUL into Postgres before `claimSeat` ever got to report a miss.
-    if (!canMatchText(gameId)) {
-      return res.status(404).json({
-        success: false,
-        error: "Game not found",
-        data: null,
-        message: "Game not found",
-      });
-    }
+    if (!canMatchText(gameId)) return refuse(res, 404, "Game not found");
 
     const otherActiveGame = await prisma.game.findFirst({
       where: {
@@ -223,33 +184,15 @@ export const joinGame = async (req: Request, res: Response) => {
     });
 
     if (otherActiveGame) {
-      return res.status(400).json({
-        success: false,
-        error: "You are already in another active game",
-        data: { activeGameId: otherActiveGame.id },
-        message: "Single active game constraint violation",
+      return refuse(res, 400, "You are already in another active game", {
+        activeGameId: otherActiveGame.id,
       });
     }
 
     const seat = await claimSeat(gameId, userId);
 
-    if (seat.status === "not-found") {
-      return res.status(404).json({
-        success: false,
-        error: "Game not found",
-        data: null,
-        message: "Game not found",
-      });
-    }
-
-    if (seat.status === "full") {
-      return res.status(400).json({
-        success: false,
-        error: "Game is full",
-        data: null,
-        message: "Game is full",
-      });
-    }
+    if (seat.status === "not-found") return refuse(res, 404, "Game not found");
+    if (seat.status === "full") return refuse(res, 400, "Game is full");
 
     res.status(200).json({
       success: true,
@@ -259,23 +202,9 @@ export const joinGame = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error joining game", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };
-
-function refuse(res: Response, status: number, error: string) {
-  return res.status(status).json({
-    success: false,
-    error,
-    data: null,
-    message: error,
-  });
-}
 
 /**
  * A new WAITING game from a position in a finished one. The creator takes the
@@ -328,11 +257,8 @@ export const forkGame = async (req: Request, res: Response) => {
     });
 
     if (activeGame) {
-      return res.status(400).json({
-        success: false,
-        error: "You are already in an active game",
-        data: { activeGameId: activeGame.id },
-        message: "Single active game constraint violation",
+      return refuse(res, 400, "You are already in an active game", {
+        activeGameId: activeGame.id,
       });
     }
 
@@ -361,12 +287,7 @@ export const forkGame = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error forking game", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };
 
@@ -429,12 +350,7 @@ export const getGames = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching games", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };
 
@@ -443,14 +359,7 @@ export const getGameById = async (req: Request, res: Response) => {
     const rawGameId = req.params.gameId;
     const gameId = Array.isArray(rawGameId) ? rawGameId[0] : rawGameId;
 
-    if (!gameId) {
-      return res.status(400).json({
-        success: false,
-        error: "Game ID is required",
-        data: null,
-        message: "Invalid game ID",
-      });
-    }
+    if (!gameId) return refuse(res, 400, "Game ID is required");
 
     const game = canMatchText(gameId)
       ? await prisma.game.findUnique({
@@ -463,14 +372,7 @@ export const getGameById = async (req: Request, res: Response) => {
         })
       : null;
 
-    if (!game) {
-      return res.status(404).json({
-        success: false,
-        error: "Game not found",
-        data: null,
-        message: "Game not found",
-      });
-    }
+    if (!game) return refuse(res, 404, "Game not found");
 
     res.status(200).json({
       success: true,
@@ -480,11 +382,6 @@ export const getGameById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching game by ID", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };

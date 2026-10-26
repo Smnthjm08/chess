@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { GameStatus, prisma, type Prisma } from "@repo/db";
 import { playerSelect, profileSelect } from "../utils/player-select";
 import { computeStats, DRAW_RESULTS } from "../utils/profile-stats";
+import { refuse, refuseInternal } from "../utils/refuse";
 import { canMatchText } from "../utils/text";
 
 const PAGE_SIZE = 20;
@@ -34,24 +35,14 @@ async function lookup(req: Request, res: Response) {
   const handle = readHandle(req);
 
   if (!handle) {
-    res.status(400).json({
-      success: false,
-      error: "Handle is required",
-      data: null,
-      message: "Invalid handle",
-    });
+    refuse(res, 400, "Handle is required");
     return null;
   }
 
   const user = canMatchText(handle) ? await findByHandle(handle) : null;
 
   if (!user) {
-    res.status(404).json({
-      success: false,
-      error: "User not found",
-      data: null,
-      message: "User not found",
-    });
+    refuse(res, 404, "User not found");
     return null;
   }
 
@@ -89,12 +80,7 @@ export const getUserByHandle = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching profile", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };
 
@@ -162,11 +148,6 @@ export const getUserGames = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching player games", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      data: null,
-      message: "Internal server error",
-    });
+    refuseInternal(res, error);
   }
 };

@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import { AuthDialog } from "@/components/auth/auth-dialog";
 import { GameRow } from "@/components/game/game-row";
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
-import { ProfileFilters } from "@/components/profile/profile-filters";
-import { ProfilePagination } from "@/components/profile/profile-pagination";
+import { PageNav } from "@/components/page-nav";
 import { ProfileStatsPanel } from "@/components/profile/profile-stats";
 import { SiteHeader } from "@/components/site-header";
+import { TabNav } from "@/components/tab-nav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import {
 import {
   parsePage,
   parseProfileFilter,
+  PROFILE_FILTERS,
+  profileGamesHref,
   resultFilter,
   type ProfileFilter,
 } from "@/lib/profile";
@@ -170,7 +172,11 @@ export default async function ProfilePage({
         <section className="space-y-3">
           <h2 className="text-lg font-semibold tracking-tight">Games</h2>
 
-          <ProfileFilters handle={handle} active={filter} />
+          <TabNav
+            tabs={PROFILE_FILTERS}
+            active={filter}
+            href={(key) => profileGamesHref(handle, key)}
+          />
 
           <div className="mt-3">
             {error ? (
@@ -210,11 +216,10 @@ export default async function ProfilePage({
                   })}
                 </ul>
 
-                <ProfilePagination
-                  handle={handle}
-                  filter={filter}
+                <PageNav
                   page={pagination?.page ?? page}
                   totalPages={pagination?.totalPages ?? 1}
+                  href={(target) => profileGamesHref(handle, filter, target)}
                 />
               </>
             )}

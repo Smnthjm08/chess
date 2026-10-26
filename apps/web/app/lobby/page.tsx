@@ -1,8 +1,8 @@
 import { SiteHeader } from "@/components/site-header";
 import { CreateGameButton } from "@/components/game/create-game-button";
 import { GameRow } from "@/components/game/game-row";
-import { LobbyFilters } from "@/components/game/lobby-filters";
-import { LobbyPagination } from "@/components/game/lobby-pagination";
+import { PageNav } from "@/components/page-nav";
+import { TabNav } from "@/components/tab-nav";
 import {
   Empty,
   EmptyContent,
@@ -13,6 +13,8 @@ import {
 import { listGames, type Game, type Pagination } from "@/lib/api";
 import {
   filterStatuses,
+  LOBBY_FILTERS,
+  lobbyHref,
   parseFilter,
   parsePage,
   type LobbyFilter,
@@ -85,7 +87,11 @@ export default async function LobbyPage({
           <CreateGameButton />
         </div>
 
-        <LobbyFilters active={filter} />
+        <TabNav
+          tabs={LOBBY_FILTERS}
+          active={filter}
+          href={(key) => lobbyHref(key)}
+        />
 
         <div className="mt-6">
           {error ? (
@@ -117,10 +123,10 @@ export default async function LobbyPage({
                 ))}
               </ul>
 
-              <LobbyPagination
-                filter={filter}
+              <PageNav
                 page={pagination?.page ?? page}
                 totalPages={pagination?.totalPages ?? 1}
+                href={(target) => lobbyHref(filter, target)}
               />
             </>
           )}

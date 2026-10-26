@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { refuse } from "../utils/refuse";
 import { getSessionUser } from "../utils/session";
 
 export async function authMiddleware(
@@ -8,14 +9,7 @@ export async function authMiddleware(
 ) {
   const user = await getSessionUser(req.headers);
 
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      error: "Not signed in",
-      data: null,
-      message: "Unauthorized",
-    });
-  }
+  if (!user) return refuse(res, 401, "Not signed in");
 
   req.user = user;
   next();
