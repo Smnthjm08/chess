@@ -1,4 +1,6 @@
-# Postgres only; run the apps on the host with `bun run dev`.
+# `up` starts Postgres only; run the apps on the host with `bun run dev`.
+# `--profile server up --build` also runs the server image against it.
+name: chess
 services:
   db:
     image: postgres:17
@@ -7,5 +9,34 @@ services:
       POSTGRES_DB: chess
     ports: ["5432:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      retries: 15
+
+  server:
+    profiles: [server]
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/chess
+      BACKEND_PORT: 8001
+    command: sh -c "bun run --filter @repo/db db:deploy && bun apps/server/src/index.ts"
+    # command: sh -c "bun run --filter @repo/db db:deploy && bun --watch apps/server/src/index.ts"
+    # Only src dirs are mounted so the image's Linux node_modules aren't shadowed by the host's.
+    # volumes:
+      # - ../apps/server/src:/app/apps/server/src
+      # - ../packages/auth/src:/app/packages/auth/src
+      # - ../packages/db/src:/app/packages/db/src
+      # - ../packages/game-core/src:/app/packages/game-core/src
+      # Keeps the Prisma client generated in the image instead of the host's (gitignored) copy.
+      # - /app/packages/db/src/generated
+    ports: ["8001:8001"]
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:

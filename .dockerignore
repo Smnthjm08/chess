@@ -5,3 +5,5 @@
 .env
 .env.*
 !.env.example
+apps/web/*
+!apps/web/package.json
