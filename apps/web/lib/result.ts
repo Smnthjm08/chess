@@ -37,6 +37,18 @@ export const OUTCOME_TITLE: Record<Outcome, string> = {
   over: "Game over",
 };
 
+/** Spectators get the winning side instead of a bare "Game over". */
+export function outcomeTitle(
+  game: Pick<GameDetail, "whiteId" | "blackId" | "winnerId">,
+  viewerId: string | null,
+): string {
+  const outcome = outcomeFor(game, viewerId);
+
+  if (outcome !== "over") return OUTCOME_TITLE[outcome];
+
+  return game.winnerId === game.whiteId ? "White wins" : "Black wins";
+}
+
 export function resultSummary(
   game: Pick<GameDetail, "white" | "black" | "winnerId" | "result">,
 ): string {

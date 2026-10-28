@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { GameResult } from "../api";
-import { outcomeFor, RESULT_TEXT, resultSummary } from "../result";
+import {
+  outcomeFor,
+  outcomeTitle,
+  RESULT_TEXT,
+  resultSummary,
+} from "../result";
 
 const alice = {
   id: "w1",
@@ -33,6 +38,17 @@ describe("outcomeFor", () => {
   test("no winner is a draw for everyone", () => {
     expect(outcomeFor(game(null, "STALEMATE"), "w1")).toBe("draw");
     expect(outcomeFor(game(null, "DRAW_AGREED"), null)).toBe("draw");
+  });
+});
+
+describe("outcomeTitle", () => {
+  test("spectators are told which side won", () => {
+    expect(outcomeTitle(game("w1", "CHECKMATE"), null)).toBe("White wins");
+    expect(outcomeTitle(game("b1", "TIMEOUT"), "someone-else")).toBe(
+      "Black wins",
+    );
+    expect(outcomeTitle(game("b1", "TIMEOUT"), "b1")).toBe("You won");
+    expect(outcomeTitle(game(null, "STALEMATE"), null)).toBe("Draw");
   });
 });
 

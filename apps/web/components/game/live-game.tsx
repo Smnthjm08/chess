@@ -22,7 +22,7 @@ import { CopyFen } from "@/components/game/copy-fen";
 import { ForkGame } from "@/components/game/fork-game";
 import { ExportPgn } from "@/components/game/export-pgn";
 import { GameControls, type GameAction } from "@/components/game/game-controls";
-import { GameResultDialog } from "@/components/game/game-result";
+import { GameResultDialog, ResultBanner } from "@/components/game/game-result";
 import { GameSeat } from "@/components/game/game-seat";
 import { Material } from "@/components/game/material";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ import {
 } from "@/lib/clock";
 import { useGameSocket, type ConnectionStatus } from "@/lib/game-socket";
 import { materialOf, type SideMaterial } from "@/lib/material";
-import { resultSummary } from "@/lib/result";
+import { outcomeFor, outcomeTitle, resultSummary } from "@/lib/result";
 import { moveSound, playSound } from "@/lib/sound";
 import {
   plyLabel,
@@ -523,6 +523,14 @@ export function LiveGame({
     />
   );
 
+  const banner = (
+    <ResultBanner
+      outcome={outcomeFor(game, viewerId)}
+      title={outcomeTitle(game, viewerId)}
+      summary={resultSummary(game)}
+    />
+  );
+
   return (
     <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-4 px-4 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8 lg:py-12">
       {/* Below lg the clocks sit on the board's edges, and the board is capped
@@ -623,13 +631,13 @@ export function LiveGame({
         <div className="space-y-3 px-1 lg:mt-3">
           {playerRow(orientation)}
           <div className="space-y-3 lg:hidden">
+            {game.result && banner}
             <MoveStrip rows={rows} current={currentPly} onSelect={selectPly} />
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               <StatusBadge status={game.status} />
               <span className="font-mono">
                 {formatTimeControl(game.initialTimeMs, game.incrementMs)}
               </span>
-              {game.result && <span>{resultSummary(game)}</span>}
               <ExportPgn game={game} className="ml-auto" />
             </div>
           </div>
@@ -649,13 +657,7 @@ export function LiveGame({
               <StatusBadge status={game.status} />
             </div>
           </CardHeader>
-          {game.result && (
-            <CardContent>
-              <p className="text-muted-foreground text-sm">
-                {resultSummary(game)}
-              </p>
-            </CardContent>
-          )}
+          {game.result && <CardContent>{banner}</CardContent>}
         </Card>
 
         <GameControls

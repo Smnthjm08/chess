@@ -10,6 +10,7 @@ import {
 import { ArrowUpDown, RotateCcw, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Board, type MoveIntent } from "@/components/game/board";
+import { ResultBanner } from "@/components/game/game-result";
 import { Material } from "@/components/game/material";
 import { MoveTable } from "@/components/game/move-list";
 import { Button } from "@/components/ui/button";
@@ -80,12 +81,6 @@ export function PracticeGame() {
     ]);
   }
 
-  const status = outcome.isGameOver
-    ? `${outcome.result ? RESULT_TEXT[outcome.result] : "Game over"} — ${
-        outcome.winner ? `${SIDE[outcome.winner]} wins` : "draw"
-      }`
-    : `${SIDE[turn]} to move`;
-
   const playerRow = (side: Orientation) => (
     <p className="flex items-center gap-2 px-1 text-sm font-medium">
       {SIDE[side]}
@@ -114,9 +109,19 @@ export function PracticeGame() {
             <CardTitle>Practice</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm" aria-live="polite">
-              {status}
-            </p>
+            {outcome.isGameOver ? (
+              <ResultBanner
+                outcome={outcome.winner ? "over" : "draw"}
+                title={outcome.winner ? `${SIDE[outcome.winner]} wins` : "Draw"}
+                summary={
+                  outcome.result ? RESULT_TEXT[outcome.result] : "Game over"
+                }
+              />
+            ) : (
+              <p className="text-sm" aria-live="polite">
+                {SIDE[turn]} to move
+              </p>
+            )}
             <p className="text-muted-foreground text-xs">
               You play both sides. Nothing is saved.
             </p>
