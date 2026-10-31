@@ -175,7 +175,7 @@ function AccountMenu() {
 export function SiteHeader() {
   return (
     <header className="border-hairline border-b">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
           className="text-title-sm flex items-center gap-2 font-semibold tracking-tight"
@@ -209,7 +209,7 @@ export function SiteHeader() {
           Chess
         </Link>
 
-        <nav className="text-muted-foreground flex items-center gap-4 text-sm">
+        <nav className="text-muted-foreground flex items-center gap-3 text-sm sm:gap-4">
           <Link
             href="/lobby"
             className="hover:text-foreground transition-colors"

@@ -6,7 +6,6 @@ import {
   TIME_CONTROL_KEYS,
   type TimeControlKey,
 } from "@repo/game-core";
-import { ArrowRightIcon } from "lucide-react";
 import { useCreateGame } from "@/components/game/create-game-button";
 import { cn } from "@/lib/utils";
 
@@ -24,60 +23,53 @@ export function TimeControlGrid() {
   const { pending, create } = useCreateGame();
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="border-hairline border-t">
       {TIME_CONTROL_KEYS.map((key) => {
         const featured = key === DEFAULT_TIME_CONTROL;
 
         return (
-          <button
-            key={key}
-            type="button"
-            disabled={pending !== null}
-            onClick={() => create(key)}
-            className={cn(
-              "group flex min-h-56 cursor-pointer flex-col rounded-xl border p-8 text-left transition-colors outline-none",
-              "focus-visible:ring-ring/50 focus-visible:ring-3 disabled:cursor-default",
-              featured
-                ? "bg-primary text-on-yellow hover:bg-primary-active border-transparent"
-                : "border-hairline bg-card hover:bg-accent",
-              pending !== null && pending !== key && "opacity-50",
-            )}
-          >
-            <span
+          <li key={key} className="border-hairline border-b">
+            <button
+              type="button"
+              disabled={pending !== null}
+              onClick={() => create(key)}
               className={cn(
-                "text-caption-upper uppercase",
-                featured ? "text-on-yellow/70" : "text-muted-foreground",
+                "group grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1 py-8 text-left outline-none sm:grid-cols-12 sm:gap-x-8",
+                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:cursor-default",
+                pending !== null && pending !== key && "opacity-50",
               )}
             >
-              {TIME_CONTROLS[key].category}
-              {featured && " · Default"}
-            </span>
+              <span
+                className={cn(
+                  "text-display-md sm:text-display-lg font-mono transition-colors sm:col-span-3",
+                  featured
+                    ? "text-primary"
+                    : "text-foreground group-hover:text-primary group-active:text-primary-active",
+                )}
+              >
+                {key}
+              </span>
 
-            <span
-              className={cn(
-                "text-display-md mt-3 font-mono",
-                featured ? "text-on-yellow" : "text-foreground",
-              )}
-            >
-              {key}
-            </span>
+              <span className="text-title-md self-center max-sm:order-3 sm:col-span-3">
+                {TIME_CONTROLS[key].category}
+                {featured && (
+                  <span className="text-muted-foreground font-normal">
+                    , the default
+                  </span>
+                )}
+              </span>
 
-            <span
-              className={cn(
-                "text-body-sm mt-2",
-                featured ? "text-on-yellow/80" : "text-muted-foreground",
-              )}
-            >
-              {describe(key)}
-            </span>
+              <span className="text-body-md text-muted-foreground self-center max-sm:order-4 max-sm:col-span-2 sm:col-span-4">
+                {describe(key)}
+              </span>
 
-            <span className="text-body-sm mt-auto flex items-center gap-1.5 pt-6 font-semibold">
-              {pending === key ? "Creating…" : `Play ${key}`}
-              <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </button>
+              <span className="text-body-sm self-center font-semibold max-sm:order-2 sm:col-span-2 sm:text-right">
+                {pending === key ? "Creating…" : `Play ${key}`}
+              </span>
+            </button>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

@@ -1,3 +1,17 @@
+/* Hallmark · shape: Stage, board-led, recomposed (referee statement, clock table, feature columns, full-bleed close) · genre: modern-minimal · theme: brand (DESIGN.md, locked) · redesign: full · job: try
+ * paper: var(--canvas) · accent: var(--primary) · display: Geist · body: Geist · hero: Stage reversed, the board on the left · nav: kept (SiteHeader, shared app chrome) · footer: mast, the wordmark over the links · signature: the hero board plays the Italian Game once on load, clocks handing over each move
+ * axes: dark/grotesk-sans/chromatic-yellow · posture: Restrained · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: P, the locked system fixes palette and type, so the argument is carried by the board playing real moves and the referee set as a statement; the clock cards became a table */
+/* Hallmark · dropped the hero stat strip (time controls, 1 link, 0 accounts) · 58 names the hero; each fact still lives in the clock grid, the rows and the close */
+/* Hallmark · dropped the "Real-time multiplayer chess" eyebrow and the three section eyebrows · 54 names them */
+/* Hallmark · reworded "the empty seat — anyone else who opens it watches" to "the empty seat. Anyone else who opens it watches." · 19 names the dash */
+/* Hallmark · waive 39b · each clock row is one full-width button that starts that game · a clock row is the control, its numeral and terms sit inside the hit area */
+/* Hallmark · waive 77 · "Your move." is one line and an action, once a page · the full-bleed yellow close is the DESIGN.md cta-band-yellow, set at poster scale */
+/* Hallmark · dropped onMove={false} · onMove is the board seat's highlight prop, not an event handler; it now follows the side to move */
+/* Hallmark · dismissed F18 · data-slot="button" is shadcn's component marker on the theme toggle, not an image slot */
+/* Hallmark · answered F19 · DESIGN.md locks 400 body, 500 caption and nav, 600 titles, 700 display for the chess system */
+/* Hallmark · waive 59 · sections part at 96px, the DESIGN.md section token · the locked chess system sets one 96px rhythm and changes paper between bands instead */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -263,16 +277,55 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-body;
   }
   html {
     @apply font-sans;
+    scrollbar-color: var(--hairline-strong) transparent;
   }
   h1,
   h2,
   h3,
   h4 {
     @apply text-foreground;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: var(--primary);
+    color: var(--on-yellow);
+  }
+}
+
+/* Hero settle on load, staggered by --i; sections fade up as they scroll in
+   where scroll-driven animation exists, and are simply there where it doesn't. */
+@utility rise {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+}
+
+@utility reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 55%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
 }
